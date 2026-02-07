@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Camera, Plus, Trash2, Loader2, Sparkles } from "lucide-react"
+import { Camera, Plus, Trash2, Loader2, Sparkles, AlertTriangle } from "lucide-react"
 import type { UserProfile, FoodEntry } from "@/lib/types"
 import { addFoodEntry, removeFoodEntry as removeFoodFromStore } from "@/lib/store"
 
@@ -42,6 +42,8 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
     [todayFood]
   )
 
+  const lowFatWarning = totals.fats > 0 && totals.fats < 30
+
   function handleAdd() {
     if (!foodName.trim() || !calories) return
 
@@ -74,17 +76,18 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
     setScanning(true)
     setScanResult(null)
 
-    // Simulated AI scan
     setTimeout(() => {
       const mockResults = [
-        { name: "Chicken & Rice", cal: 600, p: 45, c: 65, f: 12 },
-        { name: "Salmon & Veggies", cal: 480, p: 38, c: 20, f: 22 },
-        { name: "Protein Shake", cal: 320, p: 50, c: 15, f: 8 },
-        { name: "Turkey Sandwich", cal: 450, p: 35, c: 42, f: 14 },
+        { name: "Pechuga de Pollo y Arroz", cal: 550, p: 45, c: 60, f: 10 },
+        { name: "Salm\u00f3n con Verduras", cal: 480, p: 38, c: 20, f: 22 },
+        { name: "Batido de Prote\u00edna", cal: 320, p: 50, c: 15, f: 8 },
+        { name: "Tortilla de Pavo", cal: 450, p: 35, c: 42, f: 14 },
+        { name: "Ensalada C\u00e9sar con Pollo", cal: 380, p: 32, c: 18, f: 16 },
+        { name: "Avena con Pl\u00e1tano y Whey", cal: 420, p: 35, c: 55, f: 8 },
       ]
       const result = mockResults[Math.floor(Math.random() * mockResults.length)]
 
-      setScanResult(`${result.name} - ${result.cal}kcal`)
+      setScanResult(`${result.name} - ${result.cal} kcal`)
       setFoodName(result.name)
       setCalories(String(result.cal))
       setProtein(String(result.p))
@@ -129,7 +132,7 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
   return (
     <div className="flex flex-col gap-4 px-4 pb-24 pt-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Nutrition</h1>
+        <h1 className="text-2xl font-bold text-foreground">Nutrici\u00f3n</h1>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -143,10 +146,10 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
             ) : (
               <Camera className="mr-1 h-4 w-4" />
             )}
-            Scan
+            Analizar
           </Button>
           <Button size="sm" onClick={() => setShowForm(!showForm)}>
-            <Plus className="mr-1 h-4 w-4" /> Add
+            <Plus className="mr-1 h-4 w-4" /> A\u00f1adir
           </Button>
         </div>
       </div>
@@ -157,8 +160,23 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
           <CardContent className="flex items-center gap-3 p-3">
             <Sparkles className="h-5 w-5 shrink-0 text-primary" />
             <div>
-              <p className="text-sm font-medium text-foreground">AI Detection</p>
+              <p className="text-sm font-medium text-foreground">Detecci\u00f3n IA</p>
               <p className="text-xs text-muted-foreground">{scanResult}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Low fat warning */}
+      {lowFatWarning && (
+        <Card className="border-yellow-500/40 bg-yellow-500/10">
+          <CardContent className="flex items-start gap-3 p-3">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-yellow-500" />
+            <div>
+              <p className="text-sm font-medium text-yellow-400">Advertencia de Grasas</p>
+              <p className="text-xs text-yellow-300/80">
+                {"Nivel de grasas bajo (<30g) para regulaci\u00f3n hormonal. Aseg\u00farate de incluir grasas saludables."}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -169,10 +187,10 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
         <CardContent className="p-4">
           <div className="mb-4 flex items-end justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Calories consumed</p>
+              <p className="text-sm text-muted-foreground">Calor\u00edas consumidas</p>
               <p className="text-3xl font-bold text-foreground">{totals.calories}</p>
             </div>
-            <p className="text-sm text-muted-foreground">of {profile.calories} kcal</p>
+            <p className="text-sm text-muted-foreground">de {profile.calories} kcal</p>
           </div>
           <div className="mb-4 h-3 rounded-full bg-secondary">
             <div
@@ -184,19 +202,19 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
           </div>
           <div className="flex flex-col gap-3">
             <MacroBar
-              label="Protein"
+              label="Prote\u00edna"
               current={totals.protein}
               target={profile.protein}
               color="hsl(var(--chart-2))"
             />
             <MacroBar
-              label="Carbs"
+              label="Carbohidratos"
               current={totals.carbs}
               target={profile.carbs}
               color="hsl(var(--chart-3))"
             />
             <MacroBar
-              label="Fats"
+              label="Grasas"
               current={totals.fats}
               target={profile.fats}
               color="hsl(var(--chart-4))"
@@ -209,19 +227,19 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
       {showForm && (
         <Card className="border-border bg-card">
           <CardContent className="flex flex-col gap-3 p-4">
-            <h3 className="text-sm font-semibold text-foreground">Log Food</h3>
+            <h3 className="text-sm font-semibold text-foreground">Registrar Comida</h3>
             <div>
-              <Label className="text-xs text-muted-foreground">Food Name</Label>
+              <Label className="text-xs text-muted-foreground">Nombre del alimento</Label>
               <Input
                 className="mt-1 bg-secondary"
                 value={foodName}
                 onChange={(e) => setFoodName(e.target.value)}
-                placeholder="e.g. Chicken Breast"
+                placeholder="Ej: Pechuga de pollo"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-muted-foreground">Calories</Label>
+                <Label className="text-xs text-muted-foreground">Calor\u00edas</Label>
                 <Input
                   className="mt-1 bg-secondary"
                   type="number"
@@ -231,7 +249,7 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Protein (g)</Label>
+                <Label className="text-xs text-muted-foreground">Prote\u00edna (g)</Label>
                 <Input
                   className="mt-1 bg-secondary"
                   type="number"
@@ -241,7 +259,7 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Carbs (g)</Label>
+                <Label className="text-xs text-muted-foreground">Carbos (g)</Label>
                 <Input
                   className="mt-1 bg-secondary"
                   type="number"
@@ -251,7 +269,7 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Fats (g)</Label>
+                <Label className="text-xs text-muted-foreground">Grasas (g)</Label>
                 <Input
                   className="mt-1 bg-secondary"
                   type="number"
@@ -262,7 +280,7 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
               </div>
             </div>
             <Button onClick={handleAdd} disabled={!foodName.trim() || !calories}>
-              Log Food
+              Registrar Comida
             </Button>
           </CardContent>
         </Card>
@@ -271,12 +289,12 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
       {/* Food Log */}
       <div>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {"Today's Log"}
+          Registro de Hoy
         </h3>
         {todayFood.length === 0 ? (
           <Card className="border-border bg-card">
             <CardContent className="p-6 text-center text-sm text-muted-foreground">
-              No food logged today. Tap Add to get started.
+              No hay alimentos registrados hoy. Pulsa A\u00f1adir para comenzar.
             </CardContent>
           </Card>
         ) : (
@@ -287,7 +305,7 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
                   <div>
                     <p className="text-sm font-medium text-foreground">{entry.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {entry.calories} kcal | P: {entry.protein}g C: {entry.carbs}g F:{" "}
+                      {entry.calories} kcal | P: {entry.protein}g C: {entry.carbs}g G:{" "}
                       {entry.fats}g
                     </p>
                   </div>
@@ -295,7 +313,7 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
                     type="button"
                     onClick={() => handleDelete(entry.id)}
                     className="text-muted-foreground hover:text-destructive"
-                    aria-label="Delete food entry"
+                    aria-label="Eliminar entrada"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

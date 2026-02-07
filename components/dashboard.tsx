@@ -67,6 +67,12 @@ function CircularProgress({
   )
 }
 
+const goalLabels: Record<string, string> = {
+  cut: "Definici\u00f3n",
+  maintain: "Mantenimiento",
+  bulk: "Volumen",
+}
+
 export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps) {
   const todayStr = new Date().toISOString().split("T")[0]
 
@@ -97,16 +103,15 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
 
   return (
     <div className="flex flex-col gap-6 px-4 pb-24 pt-6">
-      {/* Header */}
       <div>
         <p className="text-sm text-muted-foreground">
-          {new Date().toLocaleDateString("en-US", {
+          {new Date().toLocaleDateString("es-ES", {
             weekday: "long",
             month: "long",
             day: "numeric",
           })}
         </p>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-foreground">Inicio</h1>
       </div>
 
       {/* Calorie Ring */}
@@ -115,7 +120,7 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
           <CircularProgress
             value={todayCalories}
             max={profile.calories}
-            label="Calories"
+            label="Calor\u00edas"
             unit="kcal"
             color="hsl(var(--primary))"
             size={140}
@@ -124,7 +129,7 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
             <CircularProgress
               value={todayProtein}
               max={profile.protein}
-              label="Protein"
+              label="Prote\u00edna"
               unit="g"
               color="hsl(var(--chart-2))"
               size={72}
@@ -132,7 +137,7 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
             <CircularProgress
               value={todayCarbs}
               max={profile.carbs}
-              label="Carbs"
+              label="Carbos"
               unit="g"
               color="hsl(var(--chart-3))"
               size={72}
@@ -140,7 +145,7 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
             <CircularProgress
               value={todayFats}
               max={profile.fats}
-              label="Fats"
+              label="Grasas"
               unit="g"
               color="hsl(var(--chart-4))"
               size={72}
@@ -160,7 +165,7 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
               <p className="text-xl font-bold text-foreground">
                 {profile.calories - todayCalories}
               </p>
-              <p className="text-xs text-muted-foreground">kcal remaining</p>
+              <p className="text-xs text-muted-foreground">kcal restantes</p>
             </div>
           </CardContent>
         </Card>
@@ -172,7 +177,7 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
             </div>
             <div>
               <p className="text-xl font-bold text-foreground">{totalSetsToday}</p>
-              <p className="text-xs text-muted-foreground">sets today</p>
+              <p className="text-xs text-muted-foreground">series hoy</p>
             </div>
           </CardContent>
         </Card>
@@ -186,7 +191,7 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
               <p className="text-xl font-bold text-foreground">
                 {totalVolumeToday.toLocaleString()}
               </p>
-              <p className="text-xs text-muted-foreground">volume (kg)</p>
+              <p className="text-xs text-muted-foreground">volumen (kg)</p>
             </div>
           </CardContent>
         </Card>
@@ -198,7 +203,7 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
             </div>
             <div>
               <p className="text-xl font-bold text-foreground">{weekWorkoutDays}/7</p>
-              <p className="text-xs text-muted-foreground">days this week</p>
+              <p className="text-xs text-muted-foreground">d\u00edas esta semana</p>
             </div>
           </CardContent>
         </Card>
@@ -208,14 +213,14 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
       <Card className="border-border bg-card">
         <CardContent className="p-4">
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Daily Targets
+            Objetivos Diarios
           </h3>
           <div className="flex flex-col gap-3">
             {[
-              { label: "Calories", target: profile.calories, unit: "kcal" },
-              { label: "Protein", target: profile.protein, unit: "g" },
-              { label: "Carbs", target: profile.carbs, unit: "g" },
-              { label: "Fats", target: profile.fats, unit: "g" },
+              { label: "Calor\u00edas", target: profile.calories, unit: "kcal" },
+              { label: "Prote\u00edna", target: profile.protein, unit: "g" },
+              { label: "Carbohidratos", target: profile.carbs, unit: "g" },
+              { label: "Grasas", target: profile.fats, unit: "g" },
             ].map((item) => (
               <div key={item.label} className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{item.label}</span>
@@ -229,7 +234,7 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
             <p className="text-xs text-muted-foreground">
               TDEE: <span className="font-semibold text-foreground">{profile.tdee} kcal</span>
               {" | "}
-              Goal: <span className="font-semibold capitalize text-primary">{profile.goal}</span>
+              Meta: <span className="font-semibold capitalize text-primary">{goalLabels[profile.goal] || profile.goal}</span>
             </p>
           </div>
         </CardContent>

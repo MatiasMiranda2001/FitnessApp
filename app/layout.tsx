@@ -11,9 +11,9 @@ const _jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "FitTrack Pro - Science-Based Fitness & Nutrition",
+  title: "FitTrack Pro - Entrenamiento y Nutrici\u00f3n Basados en Ciencia",
   description:
-    "Track your workouts, nutrition, and progress with science-based training principles. Progressive overload, RPE tracking, and precision macros.",
+    "Registra tus entrenamientos, nutrici\u00f3n y progreso con principios cient\u00edficos. Sobrecarga progresiva, seguimiento RPE y macros de precisi\u00f3n.",
   generator: "v0.app",
 }
 
@@ -31,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body className="font-sans antialiased">{children}</body>
     </html>
   )

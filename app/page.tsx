@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from "react"
 import { Onboarding } from "@/components/onboarding"
 import { BottomNav, type TabId } from "@/components/bottom-nav"
 import { Dashboard } from "@/components/dashboard"
+import { RoutineBuilder } from "@/components/routine-builder"
 import { WorkoutTracker } from "@/components/workout-tracker"
 import { NutritionTracker } from "@/components/nutrition-tracker"
+import { AiCoach } from "@/components/ai-coach"
 import { ProfileView } from "@/components/profile-view"
 import type { UserProfile, WorkoutLog, FoodEntry } from "@/lib/types"
 import { loadData } from "@/lib/store"
@@ -16,6 +18,7 @@ export default function Page() {
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([])
   const [activeTab, setActiveTab] = useState<TabId>("dashboard")
   const [loaded, setLoaded] = useState(false)
+  const [workoutExerciseId, setWorkoutExerciseId] = useState<string | null>(null)
 
   const refreshData = useCallback(() => {
     const data = loadData()
@@ -58,6 +61,16 @@ export default function Page() {
     setActiveTab("dashboard")
   }
 
+  function handleStartWorkout(exerciseId: string) {
+    setWorkoutExerciseId(exerciseId)
+    setActiveTab("dashboard") // briefly, then switch to trigger fresh render
+    setTimeout(() => {
+      setActiveTab("routine")
+    }, 0)
+    // We'll handle this by switching to a workout view
+    setWorkoutExerciseId(exerciseId)
+  }
+
   return (
     <main className="mx-auto min-h-screen max-w-lg">
       {activeTab === "dashboard" && (
@@ -67,10 +80,15 @@ export default function Page() {
           foodEntries={foodEntries}
         />
       )}
-      {activeTab === "workout" && (
-        <WorkoutTracker
-          workoutLogs={workoutLogs}
-          onLogAdded={refreshData}
+      {activeTab === "routine" && (
+        <RoutineBuilder
+          onUpdate={refreshData}
+          onStartWorkout={(exerciseId) => {
+            setWorkoutExerciseId(exerciseId)
+            setActiveTab("dashboard")
+            // Small delay to force fresh mount of WorkoutTracker with new initialExerciseId
+            requestAnimationFrame(() => setActiveTab("routine"))
+          }}
         />
       )}
       {activeTab === "nutrition" && (
@@ -80,6 +98,7 @@ export default function Page() {
           onUpdate={refreshData}
         />
       )}
+      {activeTab === "chat" && <AiCoach onUpdate={refreshData} />}
       {activeTab === "profile" && (
         <ProfileView
           profile={profile}
@@ -87,7 +106,10 @@ export default function Page() {
           onReset={handleReset}
         />
       )}
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav activeTab={activeTab} onTabChange={(tab) => {
+        setWorkoutExerciseId(null)
+        setActiveTab(tab)
+      }} />
     </main>
   )
 }

@@ -30,6 +30,12 @@ interface ProfileViewProps {
   onReset: () => void
 }
 
+const goalLabels: Record<string, string> = {
+  cut: "Definici\u00f3n",
+  maintain: "Mantenimiento",
+  bulk: "Volumen",
+}
+
 export function ProfileView({ profile, workoutLogs, onReset }: ProfileViewProps) {
   const allExercises = useMemo(() => {
     const data = loadData()
@@ -62,12 +68,12 @@ export function ProfileView({ profile, workoutLogs, onReset }: ProfileViewProps)
         0
       )
       return {
-        date: new Date(log.date).toLocaleDateString("en-US", {
+        date: new Date(log.date).toLocaleDateString("es-ES", {
           month: "short",
           day: "numeric",
         }),
-        "Est. 1RM": best1RM,
-        Volume: totalVolume,
+        "1RM Est.": best1RM,
+        Volumen: totalVolume,
       }
     })
   }, [selectedExercise, workoutLogs])
@@ -81,7 +87,7 @@ export function ProfileView({ profile, workoutLogs, onReset }: ProfileViewProps)
 
   return (
     <div className="flex flex-col gap-4 px-4 pb-24 pt-6">
-      <h1 className="text-2xl font-bold text-foreground">Profile</h1>
+      <h1 className="text-2xl font-bold text-foreground">Perfil</h1>
 
       {/* User info */}
       <Card className="border-border bg-card">
@@ -91,11 +97,11 @@ export function ProfileView({ profile, workoutLogs, onReset }: ProfileViewProps)
           </div>
           <div>
             <p className="text-lg font-bold text-foreground">
-              {profile.gender === "male" ? "Male" : "Female"}, {profile.age} years
+              {profile.gender === "male" ? "Masculino" : "Femenino"}, {profile.age} a\u00f1os
             </p>
             <p className="text-sm text-muted-foreground">
               {profile.heightCm}cm | {profile.weightKg}kg |{" "}
-              <span className="capitalize text-primary">{profile.goal}</span>
+              <span className="capitalize text-primary">{goalLabels[profile.goal] || profile.goal}</span>
             </p>
           </div>
         </CardContent>
@@ -107,14 +113,14 @@ export function ProfileView({ profile, workoutLogs, onReset }: ProfileViewProps)
           <CardContent className="flex flex-col items-center gap-1 p-3">
             <Calendar className="h-5 w-5 text-primary" />
             <p className="text-lg font-bold text-foreground">{totalWorkouts}</p>
-            <p className="text-[10px] text-muted-foreground">Workouts</p>
+            <p className="text-[10px] text-muted-foreground">Entrenamientos</p>
           </CardContent>
         </Card>
         <Card className="border-border bg-card">
           <CardContent className="flex flex-col items-center gap-1 p-3">
             <Dumbbell className="h-5 w-5 text-chart-2" />
             <p className="text-lg font-bold text-foreground">{totalSets}</p>
-            <p className="text-[10px] text-muted-foreground">Total Sets</p>
+            <p className="text-[10px] text-muted-foreground">Series Totales</p>
           </CardContent>
         </Card>
         <Card className="border-border bg-card">
@@ -125,7 +131,7 @@ export function ProfileView({ profile, workoutLogs, onReset }: ProfileViewProps)
                 ? `${(totalVolume / 1000).toFixed(1)}k`
                 : totalVolume}
             </p>
-            <p className="text-[10px] text-muted-foreground">Volume (kg)</p>
+            <p className="text-[10px] text-muted-foreground">Volumen (kg)</p>
           </CardContent>
         </Card>
       </div>
@@ -136,13 +142,13 @@ export function ProfileView({ profile, workoutLogs, onReset }: ProfileViewProps)
           <div className="mb-4 flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-primary" />
             <h3 className="text-sm font-semibold text-foreground">
-              Progress Analytics
+              An\u00e1lisis de Progreso
             </h3>
           </div>
 
           {exercisesWithLogs.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Log some workouts to see analytics
+              Registra entrenamientos para ver an\u00e1lisis
             </p>
           ) : (
             <>
@@ -152,7 +158,7 @@ export function ProfileView({ profile, workoutLogs, onReset }: ProfileViewProps)
                   onValueChange={setSelectedExercise}
                 >
                   <SelectTrigger className="bg-secondary">
-                    <SelectValue placeholder="Select exercise" />
+                    <SelectValue placeholder="Seleccionar ejercicio" />
                   </SelectTrigger>
                   <SelectContent>
                     {exercisesWithLogs.map((ex) => (
@@ -182,7 +188,7 @@ export function ProfileView({ profile, workoutLogs, onReset }: ProfileViewProps)
 
               {chartData.length === 0 ? (
                 <p className="py-8 text-center text-sm text-muted-foreground">
-                  No data for this exercise yet
+                  Sin datos para este ejercicio a\u00fan
                 </p>
               ) : (
                 <ResponsiveContainer width="100%" height={220}>
@@ -211,7 +217,7 @@ export function ProfileView({ profile, workoutLogs, onReset }: ProfileViewProps)
                     />
                     <Line
                       type="monotone"
-                      dataKey={chartMode === "1rm" ? "Est. 1RM" : "Volume"}
+                      dataKey={chartMode === "1rm" ? "1RM Est." : "Volumen"}
                       stroke="hsl(var(--primary))"
                       strokeWidth={2}
                       dot={{
@@ -232,7 +238,7 @@ export function ProfileView({ profile, workoutLogs, onReset }: ProfileViewProps)
       <Card className="border-border bg-card">
         <CardContent className="p-4">
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Calculated Targets
+            Objetivos Calculados
           </h3>
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-sm">
@@ -242,25 +248,25 @@ export function ProfileView({ profile, workoutLogs, onReset }: ProfileViewProps)
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Daily Calories</span>
+              <span className="text-muted-foreground">Calor\u00edas Diarias</span>
               <span className="font-semibold text-foreground">
                 {profile.calories} kcal
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Protein</span>
+              <span className="text-muted-foreground">Prote\u00edna</span>
               <span className="font-semibold text-foreground">
                 {profile.protein}g
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Carbs</span>
+              <span className="text-muted-foreground">Carbohidratos</span>
               <span className="font-semibold text-foreground">
                 {profile.carbs}g
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Fats</span>
+              <span className="text-muted-foreground">Grasas</span>
               <span className="font-semibold text-foreground">
                 {profile.fats}g
               </span>
@@ -274,7 +280,7 @@ export function ProfileView({ profile, workoutLogs, onReset }: ProfileViewProps)
         className="w-full"
         onClick={onReset}
       >
-        Reset All Data
+        Reiniciar Todos los Datos
       </Button>
     </div>
   )

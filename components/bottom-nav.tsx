@@ -1,10 +1,9 @@
 "use client"
 
 import React from "react"
+import { LayoutDashboard, Dumbbell, Apple, MessageCircle, User } from "lucide-react"
 
-import { LayoutDashboard, Dumbbell, Apple, User } from "lucide-react"
-
-export type TabId = "dashboard" | "workout" | "nutrition" | "profile"
+export type TabId = "dashboard" | "routine" | "nutrition" | "chat" | "profile"
 
 interface BottomNavProps {
   activeTab: TabId
@@ -12,15 +11,20 @@ interface BottomNavProps {
 }
 
 const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "workout", label: "Workout", icon: Dumbbell },
-  { id: "nutrition", label: "Nutrition", icon: Apple },
-  { id: "profile", label: "Profile", icon: User },
+  { id: "dashboard", label: "Inicio", icon: LayoutDashboard },
+  { id: "routine", label: "Rutina", icon: Dumbbell },
+  { id: "nutrition", label: "Nutrici\u00f3n", icon: Apple },
+  { id: "chat", label: "Chat IA", icon: MessageCircle },
+  { id: "profile", label: "Perfil", icon: User },
 ]
 
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md"
+      role="tablist"
+      aria-label="Navegaci\u00f3n principal"
+    >
       <div className="mx-auto flex max-w-lg items-center justify-around py-2">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id
@@ -28,8 +32,10 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
             <button
               key={tab.id}
               type="button"
+              role="tab"
+              aria-selected={isActive}
               onClick={() => onTabChange(tab.id)}
-              className={`flex flex-col items-center gap-0.5 rounded-lg px-4 py-1.5 transition-colors ${
+              className={`flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 transition-colors ${
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
@@ -42,7 +48,6 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
           )
         })}
       </div>
-      {/* Safe area for notched devices */}
       <div className="h-[env(safe-area-inset-bottom)]" />
     </nav>
   )

@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -14,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Dumbbell, Target, TrendingUp, Flame } from "lucide-react"
+import { Dumbbell, Target, TrendingUp, Flame, AlertTriangle } from "lucide-react"
 import type { Gender, Goal, UserProfile } from "@/lib/types"
 import { calculateTDEE, calculateMacros, saveProfile } from "@/lib/store"
 
@@ -29,6 +28,19 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   const [heightCm, setHeightCm] = useState("")
   const [weightKg, setWeightKg] = useState("")
   const [goal, setGoal] = useState<Goal>("maintain")
+  const [showWarning, setShowWarning] = useState(false)
+
+  function getWarning(): string | null {
+    const w = Number.parseFloat(weightKg)
+    if (!w) return null
+    if (goal === "cut" && w < 50) {
+      return "Tu peso ya es bajo. Una fase de definici\u00f3n podr\u00eda ser riesgosa. Considera mantenimiento o volumen."
+    }
+    if (goal === "bulk" && w > 120) {
+      return "Con tu peso actual, un superav\u00edt cal\u00f3rico podr\u00eda no ser lo ideal. Considera primero una fase de definici\u00f3n."
+    }
+    return null
+  }
 
   function handleSubmit() {
     const ageNum = Number.parseInt(age)
@@ -36,6 +48,12 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     const weightNum = Number.parseFloat(weightKg)
 
     if (!ageNum || !heightNum || !weightNum) return
+
+    const warning = getWarning()
+    if (warning && !showWarning) {
+      setShowWarning(true)
+      return
+    }
 
     const tdee = calculateTDEE(gender, ageNum, heightNum, weightNum)
     const macros = calculateMacros(tdee, weightNum, goal)
@@ -54,23 +72,29 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     onComplete(profile)
   }
 
+  const goalLabels: Record<Goal, string> = {
+    cut: "Definici\u00f3n",
+    maintain: "Mantenimiento",
+    bulk: "Volumen",
+  }
+
   const goals: { value: Goal; label: string; desc: string; icon: React.ReactNode }[] = [
     {
       value: "cut",
-      label: "Cut",
-      desc: "Lose fat, preserve muscle",
+      label: "Definici\u00f3n",
+      desc: "Perder grasa, preservar m\u00fasculo",
       icon: <Flame className="h-5 w-5" />,
     },
     {
       value: "maintain",
-      label: "Maintain",
-      desc: "Stay at current weight",
+      label: "Mantenimiento",
+      desc: "Mantener peso actual",
       icon: <Target className="h-5 w-5" />,
     },
     {
       value: "bulk",
-      label: "Bulk",
-      desc: "Build muscle, gain strength",
+      label: "Volumen",
+      desc: "Ganar m\u00fasculo y fuerza",
       icon: <TrendingUp className="h-5 w-5" />,
     },
   ]
@@ -85,7 +109,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">FitTrack Pro</h1>
             <p className="mt-2 text-muted-foreground">
-              Science-based training and nutrition tracking
+              Entrenamiento y nutrici\u00f3n basados en ciencia
             </p>
           </div>
           <div className="mt-4 flex flex-col gap-3 text-left text-sm text-muted-foreground">
@@ -93,19 +117,19 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
                 <TrendingUp className="h-4 w-4 text-primary" />
               </div>
-              <span>Progressive overload tracking</span>
+              <span>Seguimiento de sobrecarga progresiva</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
                 <Target className="h-4 w-4 text-primary" />
               </div>
-              <span>RPE-based set quality tracking</span>
+              <span>Control de calidad por RPE/RIR</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
                 <Flame className="h-4 w-4 text-primary" />
               </div>
-              <span>Precision nutrition with macro targets</span>
+              <span>Nutrici\u00f3n de precisi\u00f3n con macros personalizados</span>
             </div>
           </div>
           <Button
@@ -113,7 +137,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             size="lg"
             onClick={() => setStep(1)}
           >
-            Get Started
+            Comenzar
           </Button>
         </div>
       </div>
@@ -126,30 +150,30 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         <div className="w-full max-w-sm">
           <div className="mb-8 text-center">
             <p className="text-xs font-medium uppercase tracking-widest text-primary">
-              Step 1 of 3
+              Paso 1 de 2
             </p>
-            <h2 className="mt-2 text-2xl font-bold text-foreground">About You</h2>
+            <h2 className="mt-2 text-2xl font-bold text-foreground">Tu Perfil</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              We use this to calculate your targets
+              Usamos estos datos para calcular tus objetivos
             </p>
           </div>
 
           <div className="flex flex-col gap-5">
             <div>
-              <Label className="text-sm text-muted-foreground">Gender</Label>
+              <Label className="text-sm text-muted-foreground">G\u00e9nero</Label>
               <Select value={gender} onValueChange={(v: Gender) => setGender(v)}>
                 <SelectTrigger className="mt-1.5 bg-secondary">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="male">Masculino</SelectItem>
+                  <SelectItem value="female">Femenino</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label className="text-sm text-muted-foreground">Age</Label>
+              <Label className="text-sm text-muted-foreground">Edad</Label>
               <Input
                 className="mt-1.5 bg-secondary"
                 type="number"
@@ -160,7 +184,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             </div>
 
             <div>
-              <Label className="text-sm text-muted-foreground">Height (cm)</Label>
+              <Label className="text-sm text-muted-foreground">Altura (cm)</Label>
               <Input
                 className="mt-1.5 bg-secondary"
                 type="number"
@@ -171,7 +195,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             </div>
 
             <div>
-              <Label className="text-sm text-muted-foreground">Weight (kg)</Label>
+              <Label className="text-sm text-muted-foreground">Peso (kg)</Label>
               <Input
                 className="mt-1.5 bg-secondary"
                 type="number"
@@ -188,23 +212,25 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             disabled={!age || !heightCm || !weightKg}
             onClick={() => setStep(2)}
           >
-            Continue
+            Continuar
           </Button>
         </div>
       </div>
     )
   }
 
+  const warning = getWarning()
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <p className="text-xs font-medium uppercase tracking-widest text-primary">
-            Step 2 of 3
+            Paso 2 de 2
           </p>
-          <h2 className="mt-2 text-2xl font-bold text-foreground">Your Goal</h2>
+          <h2 className="mt-2 text-2xl font-bold text-foreground">Tu Objetivo</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            This determines your caloric target
+            Esto determina tu objetivo cal\u00f3rico
           </p>
         </div>
 
@@ -217,7 +243,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                   ? "border-primary bg-primary/10"
                   : "border-border bg-card hover:border-muted-foreground/30"
               }`}
-              onClick={() => setGoal(g.value)}
+              onClick={() => {
+                setGoal(g.value)
+                setShowWarning(false)
+              }}
             >
               <CardContent className="flex items-center gap-4 p-4">
                 <div
@@ -238,19 +267,35 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           ))}
         </div>
 
+        {/* AI Warning for unrealistic goals */}
+        {showWarning && warning && (
+          <Card className="mt-4 border-yellow-500/40 bg-yellow-500/10">
+            <CardContent className="flex items-start gap-3 p-4">
+              <AlertTriangle className="h-5 w-5 shrink-0 text-yellow-500" />
+              <div>
+                <p className="text-sm font-medium text-yellow-400">Advertencia IA</p>
+                <p className="mt-1 text-xs text-yellow-300/80">{warning}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Pulsa de nuevo &quot;Calcular&quot; para continuar de todas formas.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Button
           className="mt-8 w-full font-semibold"
           size="lg"
           onClick={handleSubmit}
         >
-          Calculate My Targets
+          Calcular Mis Objetivos
         </Button>
         <Button
           variant="ghost"
           className="mt-2 w-full text-muted-foreground"
           onClick={() => setStep(1)}
         >
-          Back
+          Atr\u00e1s
         </Button>
       </div>
     </div>
