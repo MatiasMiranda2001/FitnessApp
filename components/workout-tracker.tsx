@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -306,6 +307,7 @@ export function WorkoutTracker({ workoutLogs, onLogAdded }: WorkoutTrackerProps)
           <DialogContent className="bg-card">
             <DialogHeader>
               <DialogTitle>Add Custom Exercise</DialogTitle>
+              <DialogDescription>Create a new exercise with a custom name and muscle group.</DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-4">
               <div>
