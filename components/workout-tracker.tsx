@@ -93,7 +93,6 @@ export function WorkoutTracker({ workoutLogs, onLogAdded, initialExerciseId }: W
     )
   }
 
-  // Smart warnings
   function getSmartWarnings(exerciseId: string): string[] {
     const warnings: string[] = []
     const prev = getPreviousBest(exerciseId)
@@ -101,21 +100,19 @@ export function WorkoutTracker({ workoutLogs, onLogAdded, initialExerciseId }: W
     for (const set of sets) {
       if (set.weight <= 0 || set.reps <= 0) continue
 
-      // RPE 10 with big weight jump
       if (prev && prev.weight > 0 && set.rpe >= 10) {
         const increase = ((set.weight - prev.weight) / prev.weight) * 100
         if (increase >= 20) {
           warnings.push(
-            "Cuidado: Salto de carga muy alto (+20%) con RPE 10. Riesgo de lesi\u00f3n."
+            "Cuidado: Salto de carga muy alto (+20%) con RPE 10. Riesgo de lesión."
           )
           break
         }
       }
 
-      // RPE 10 at high weight
       if (set.rpe >= 10 && set.weight > 0) {
         warnings.push(
-          "Consejo: Evita entrenar al fallo (RPE 10) frecuentemente. RPE 7-9 es m\u00e1s sostenible."
+          "Consejo: Evita entrenar al fallo (RPE 10) frecuentemente. RPE 7-9 es más sostenible."
         )
         break
       }
@@ -197,7 +194,6 @@ export function WorkoutTracker({ workoutLogs, onLogAdded, initialExerciseId }: W
           <div className="w-5" />
         </div>
 
-        {/* Previous best */}
         {prev && (
           <Card className="border-border bg-secondary">
             <CardContent className="flex items-center justify-between p-3">
@@ -210,14 +206,12 @@ export function WorkoutTracker({ workoutLogs, onLogAdded, initialExerciseId }: W
           </Card>
         )}
 
-        {/* Progress badge */}
         {isProgress && (
           <Badge className="w-fit bg-primary text-primary-foreground">
-            <TrendingUp className="mr-1 h-3 w-3" /> Progreso!
+            <TrendingUp className="mr-1 h-3 w-3" /> {"¡Progreso!"}
           </Badge>
         )}
 
-        {/* Smart warnings */}
         {warnings.map((w, i) => (
           <Card key={`warning-${i}`} className="border-yellow-500/40 bg-yellow-500/10">
             <CardContent className="flex items-start gap-3 p-3">
@@ -227,7 +221,6 @@ export function WorkoutTracker({ workoutLogs, onLogAdded, initialExerciseId }: W
           </Card>
         ))}
 
-        {/* Video placeholder */}
         {selectedExercise.videoPlaceholder && (
           <Card className="border-border bg-secondary">
             <CardContent className="flex items-center gap-3 p-3">
@@ -235,14 +228,13 @@ export function WorkoutTracker({ workoutLogs, onLogAdded, initialExerciseId }: W
                 <Play className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium text-foreground">Video de T\u00e9cnica</p>
-                <p className="text-xs text-muted-foreground">Ver gu\u00eda de forma correcta</p>
+                <p className="text-sm font-medium text-foreground">Video de Técnica</p>
+                <p className="text-xs text-muted-foreground">Ver guía de forma correcta</p>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Sets */}
         <div>
           <div className="mb-2 grid grid-cols-[1fr_2fr_2fr_2fr_auto] items-center gap-2">
             <span className="text-center text-xs font-medium text-muted-foreground">Serie</span>
@@ -303,24 +295,23 @@ export function WorkoutTracker({ workoutLogs, onLogAdded, initialExerciseId }: W
           </Button>
         </div>
 
-        {/* RPE Guide */}
         <Card className="border-border bg-card">
           <CardContent className="p-3">
             <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Gu\u00eda RPE
+              Guía RPE
             </h4>
             <div className="grid grid-cols-2 gap-1 text-xs">
               <span className="text-muted-foreground">
-                <span className="font-semibold text-foreground">10</span> - Esfuerzo m\u00e1ximo, 0 reps m\u00e1s
+                <span className="font-semibold text-foreground">10</span> - Esfuerzo máximo, 0 reps más
               </span>
               <span className="text-muted-foreground">
-                <span className="font-semibold text-foreground">9</span> - Podr\u00edas hacer 1 rep m\u00e1s
+                <span className="font-semibold text-foreground">9</span> - Podrías hacer 1 rep más
               </span>
               <span className="text-muted-foreground">
-                <span className="font-semibold text-foreground">8</span> - Podr\u00edas hacer 2 reps m\u00e1s
+                <span className="font-semibold text-foreground">8</span> - Podrías hacer 2 reps más
               </span>
               <span className="text-muted-foreground">
-                <span className="font-semibold text-foreground">7</span> - Podr\u00edas hacer 3 reps m\u00e1s
+                <span className="font-semibold text-foreground">7</span> - Podrías hacer 3 reps más
               </span>
             </div>
           </CardContent>
@@ -381,7 +372,6 @@ export function WorkoutTracker({ workoutLogs, onLogAdded, initialExerciseId }: W
         </Dialog>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -392,7 +382,6 @@ export function WorkoutTracker({ workoutLogs, onLogAdded, initialExerciseId }: W
         />
       </div>
 
-      {/* Search Results */}
       {filteredExercises ? (
         <div className="flex flex-col gap-2">
           {filteredExercises.length === 0 && (
@@ -451,7 +440,7 @@ function ExerciseCard({
           <span className="text-sm font-medium text-foreground">{exercise.name}</span>
           {prevBest ? (
             <span className="text-xs text-muted-foreground">
-              \u00daltimo: {prevBest.weight}kg x {prevBest.reps}
+              Último: {prevBest.weight}kg x {prevBest.reps}
             </span>
           ) : (
             <span className="text-xs text-muted-foreground">Sin datos previos</span>

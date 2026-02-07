@@ -18,13 +18,14 @@ export default function Page() {
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([])
   const [activeTab, setActiveTab] = useState<TabId>("dashboard")
   const [loaded, setLoaded] = useState(false)
-  const [workoutExerciseId, setWorkoutExerciseId] = useState<string | null>(null)
+  const [dataVersion, setDataVersion] = useState(0)
 
   const refreshData = useCallback(() => {
     const data = loadData()
     setProfile(data.profile)
     setWorkoutLogs(data.workoutLogs)
     setFoodEntries(data.foodEntries)
+    setDataVersion((v) => v + 1)
   }, [])
 
   useEffect(() => {
@@ -59,16 +60,7 @@ export default function Page() {
     setWorkoutLogs([])
     setFoodEntries([])
     setActiveTab("dashboard")
-  }
-
-  function handleStartWorkout(exerciseId: string) {
-    setWorkoutExerciseId(exerciseId)
-    setActiveTab("dashboard") // briefly, then switch to trigger fresh render
-    setTimeout(() => {
-      setActiveTab("routine")
-    }, 0)
-    // We'll handle this by switching to a workout view
-    setWorkoutExerciseId(exerciseId)
+    setDataVersion(0)
   }
 
   return (
@@ -82,11 +74,10 @@ export default function Page() {
       )}
       {activeTab === "routine" && (
         <RoutineBuilder
+          dataVersion={dataVersion}
           onUpdate={refreshData}
           onStartWorkout={(exerciseId) => {
-            setWorkoutExerciseId(exerciseId)
             setActiveTab("dashboard")
-            // Small delay to force fresh mount of WorkoutTracker with new initialExerciseId
             requestAnimationFrame(() => setActiveTab("routine"))
           }}
         />
@@ -98,7 +89,9 @@ export default function Page() {
           onUpdate={refreshData}
         />
       )}
-      {activeTab === "chat" && <AiCoach onUpdate={refreshData} />}
+      {activeTab === "chat" && (
+        <AiCoach dataVersion={dataVersion} onUpdate={refreshData} />
+      )}
       {activeTab === "profile" && (
         <ProfileView
           profile={profile}
@@ -106,10 +99,10 @@ export default function Page() {
           onReset={handleReset}
         />
       )}
-      <BottomNav activeTab={activeTab} onTabChange={(tab) => {
-        setWorkoutExerciseId(null)
-        setActiveTab(tab)
-      }} />
+      <BottomNav
+        activeTab={activeTab}
+        onTabChange={(tab) => setActiveTab(tab)}
+      />
     </main>
   )
 }

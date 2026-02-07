@@ -37,16 +37,18 @@ import { loadData, saveRoutine, deleteRoutine, setActiveRoutine } from "@/lib/st
 import { routineTemplates } from "@/lib/routine-templates"
 
 interface RoutineBuilderProps {
+  dataVersion: number
   onUpdate: () => void
   onStartWorkout: (exerciseId: string) => void
 }
 
-export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps) {
+export function RoutineBuilder({ dataVersion, onUpdate, onStartWorkout }: RoutineBuilderProps) {
   const [view, setView] = useState<"list" | "edit" | "templates">("list")
   const [editingRoutine, setEditingRoutine] = useState<WeeklyRoutine | null>(null)
   const [expandedDay, setExpandedDay] = useState<number | null>(null)
 
-  const data = useMemo(() => loadData(), [])
+  // Re-read from localStorage whenever dataVersion changes
+  const data = useMemo(() => loadData(), [dataVersion])
   const userRoutines = data.routines.filter((r) => !r.isTemplate)
   const activeRoutineId = data.activeRoutineId
 
@@ -64,7 +66,7 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
       id: `routine-${Date.now()}`,
       name: "Nueva Rutina",
       days: [
-        { dayNumber: 1, label: "D\u00eda 1", exercises: [] },
+        { dayNumber: 1, label: "Día 1", exercises: [] },
       ],
     }
     setEditingRoutine(routine)
@@ -104,7 +106,7 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
     if (!editingRoutine || editingRoutine.days.length >= 7) return
     const newDay: RoutineDay = {
       dayNumber: editingRoutine.days.length + 1,
-      label: `D\u00eda ${editingRoutine.days.length + 1}`,
+      label: `Día ${editingRoutine.days.length + 1}`,
       exercises: [],
     }
     setEditingRoutine({
@@ -175,13 +177,13 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
     return (
       <div className="flex flex-col gap-4 px-4 pb-24 pt-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Rutinas Cient\u00edficas</h1>
+          <h1 className="text-2xl font-bold text-foreground">Rutinas Científicas</h1>
           <Button variant="ghost" size="sm" onClick={() => setView("list")}>
             Volver
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">
-          Plantillas basadas en evidencia cient\u00edfica. Clona una para personalizar.
+          Plantillas basadas en evidencia científica. Clona una para personalizar.
         </p>
 
         {routineTemplates.map((template) => (
@@ -191,7 +193,7 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
                 <div>
                   <h3 className="font-semibold text-foreground">{template.name}</h3>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {template.days.length} d\u00edas/semana &middot;{" "}
+                    {template.days.length} {"días/semana"} &middot;{" "}
                     {template.days.reduce((s, d) => s + d.exercises.length, 0)} ejercicios totales
                   </p>
                 </div>
@@ -241,7 +243,7 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
 
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-muted-foreground">
-            {editingRoutine.days.length} d\u00eda(s) / semana
+            {editingRoutine.days.length} {"día(s) / semana"}
           </span>
           <Button
             variant="outline"
@@ -250,7 +252,7 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
             onClick={handleAddDay}
             disabled={editingRoutine.days.length >= 7}
           >
-            <Plus className="mr-1 h-3 w-3" /> D\u00eda
+            <Plus className="mr-1 h-3 w-3" /> Día
           </Button>
         </div>
 
@@ -269,7 +271,7 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   )}
                   <span className="font-semibold text-foreground">
-                    D\u00eda {day.dayNumber}: {day.label}
+                    Día {day.dayNumber}: {day.label}
                   </span>
                   <Badge variant="secondary" className="text-[10px]">
                     {day.exercises.length} ej.
@@ -279,7 +281,7 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
                   type="button"
                   onClick={() => handleRemoveDay(dayIndex)}
                   className="text-muted-foreground hover:text-destructive"
-                  aria-label="Eliminar d\u00eda"
+                  aria-label="Eliminar día"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -288,7 +290,7 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
               {expandedDay === dayIndex && (
                 <div className="mt-4 flex flex-col gap-3">
                   <div>
-                    <Label className="text-xs text-muted-foreground">Nombre del d\u00eda</Label>
+                    <Label className="text-xs text-muted-foreground">Nombre del día</Label>
                     <Input
                       className="mt-1 bg-secondary text-sm"
                       value={day.label}
@@ -359,7 +361,7 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
                         <DialogHeader>
                           <DialogTitle>Seleccionar Ejercicio</DialogTitle>
                           <DialogDescription>
-                            Elige un ejercicio para agregar al d\u00eda {day.dayNumber}.
+                            Elige un ejercicio para agregar al día {day.dayNumber}.
                           </DialogDescription>
                         </DialogHeader>
                         <div className="flex flex-col gap-1">
@@ -386,7 +388,7 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
                   )}
                   {day.exercises.length >= 15 && (
                     <p className="text-center text-xs text-muted-foreground">
-                      M\u00e1ximo 15 ejercicios por d\u00eda alcanzado
+                      Máximo 15 ejercicios por día alcanzado
                     </p>
                   )}
                 </div>
@@ -415,7 +417,6 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
         </div>
       </div>
 
-      {/* Active Routine Quick Access */}
       {activeRoutine && (
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-4">
@@ -429,7 +430,7 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
                 <div key={day.dayNumber} className="rounded-lg bg-secondary p-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-foreground">
-                      D\u00eda {day.dayNumber}: {day.label}
+                      Día {day.dayNumber}: {day.label}
                     </span>
                     <span className="text-[10px] text-muted-foreground">
                       {day.exercises.length} ejercicios
@@ -449,7 +450,7 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
                     ))}
                     {day.exercises.length > 4 && (
                       <span className="self-center text-[10px] text-muted-foreground">
-                        +{day.exercises.length - 4} m\u00e1s
+                        +{day.exercises.length - 4} más
                       </span>
                     )}
                   </div>
@@ -460,13 +461,12 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
         </Card>
       )}
 
-      {/* All routines */}
       {userRoutines.length === 0 ? (
         <Card className="border-border bg-card">
           <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
             <Dumbbell className="h-8 w-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              No tienes rutinas a\u00fan. Crea una nueva o clona una plantilla cient\u00edfica.
+              No tienes rutinas aún. Crea una nueva o clona una plantilla científica.
             </p>
           </CardContent>
         </Card>
@@ -483,7 +483,7 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
                 <div>
                   <h3 className="font-semibold text-foreground">{routine.name}</h3>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {routine.days.length} d\u00edas &middot;{" "}
+                    {routine.days.length} días &middot;{" "}
                     {routine.days.reduce((s, d) => s + d.exercises.length, 0)} ejercicios
                   </p>
                 </div>
@@ -515,13 +515,6 @@ export function RoutineBuilder({ onUpdate, onStartWorkout }: RoutineBuilderProps
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-              </div>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {routine.days.map((day) => (
-                  <Badge key={day.dayNumber} variant="secondary" className="text-[10px]">
-                    D{day.dayNumber}: {day.label}
-                  </Badge>
-                ))}
               </div>
             </CardContent>
           </Card>

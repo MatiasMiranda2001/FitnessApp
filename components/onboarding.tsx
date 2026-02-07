@@ -34,10 +34,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     const w = Number.parseFloat(weightKg)
     if (!w) return null
     if (goal === "cut" && w < 50) {
-      return "Tu peso ya es bajo. Una fase de definici\u00f3n podr\u00eda ser riesgosa. Considera mantenimiento o volumen."
+      return "Tu peso ya es bajo. Una fase de definición podría ser riesgosa. Considera mantenimiento o volumen."
     }
     if (goal === "bulk" && w > 120) {
-      return "Con tu peso actual, un superav\u00edt cal\u00f3rico podr\u00eda no ser lo ideal. Considera primero una fase de definici\u00f3n."
+      return "Con tu peso actual, un superávit calórico podría no ser lo ideal. Considera primero una fase de definición."
     }
     return null
   }
@@ -72,17 +72,11 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     onComplete(profile)
   }
 
-  const goalLabels: Record<Goal, string> = {
-    cut: "Definici\u00f3n",
-    maintain: "Mantenimiento",
-    bulk: "Volumen",
-  }
-
   const goals: { value: Goal; label: string; desc: string; icon: React.ReactNode }[] = [
     {
       value: "cut",
-      label: "Definici\u00f3n",
-      desc: "Perder grasa, preservar m\u00fasculo",
+      label: "Definición",
+      desc: "Perder grasa, preservar músculo",
       icon: <Flame className="h-5 w-5" />,
     },
     {
@@ -94,7 +88,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     {
       value: "bulk",
       label: "Volumen",
-      desc: "Ganar m\u00fasculo y fuerza",
+      desc: "Ganar músculo y fuerza",
       icon: <TrendingUp className="h-5 w-5" />,
     },
   ]
@@ -109,7 +103,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">FitTrack Pro</h1>
             <p className="mt-2 text-muted-foreground">
-              Entrenamiento y nutrici\u00f3n basados en ciencia
+              Entrenamiento y nutrición basados en ciencia
             </p>
           </div>
           <div className="mt-4 flex flex-col gap-3 text-left text-sm text-muted-foreground">
@@ -129,7 +123,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
                 <Flame className="h-4 w-4 text-primary" />
               </div>
-              <span>Nutrici\u00f3n de precisi\u00f3n con macros personalizados</span>
+              <span>Nutrición de precisión con macros personalizados</span>
             </div>
           </div>
           <Button
@@ -160,7 +154,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
           <div className="flex flex-col gap-5">
             <div>
-              <Label className="text-sm text-muted-foreground">G\u00e9nero</Label>
+              <Label className="text-sm text-muted-foreground">Género</Label>
               <Select value={gender} onValueChange={(v: Gender) => setGender(v)}>
                 <SelectTrigger className="mt-1.5 bg-secondary">
                   <SelectValue />
@@ -230,7 +224,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </p>
           <h2 className="mt-2 text-2xl font-bold text-foreground">Tu Objetivo</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Esto determina tu objetivo cal\u00f3rico
+            Esto determina tu objetivo calórico
           </p>
         </div>
 
@@ -267,7 +261,6 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           ))}
         </div>
 
-        {/* AI Warning for unrealistic goals */}
         {showWarning && warning && (
           <Card className="mt-4 border-yellow-500/40 bg-yellow-500/10">
             <CardContent className="flex items-start gap-3 p-4">
@@ -276,7 +269,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 <p className="text-sm font-medium text-yellow-400">Advertencia IA</p>
                 <p className="mt-1 text-xs text-yellow-300/80">{warning}</p>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Pulsa de nuevo &quot;Calcular&quot; para continuar de todas formas.
+                  {"Pulsa de nuevo \"Calcular\" para continuar de todas formas."}
                 </p>
               </div>
             </CardContent>
@@ -295,7 +288,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           className="mt-2 w-full text-muted-foreground"
           onClick={() => setStep(1)}
         >
-          Atr\u00e1s
+          Atrás
         </Button>
       </div>
     </div>

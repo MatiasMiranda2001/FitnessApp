@@ -13,7 +13,7 @@ interface BottomNavProps {
 const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Inicio", icon: LayoutDashboard },
   { id: "routine", label: "Rutina", icon: Dumbbell },
-  { id: "nutrition", label: "Nutrici\u00f3n", icon: Apple },
+  { id: "nutrition", label: "Nutrición", icon: Apple },
   { id: "chat", label: "Chat IA", icon: MessageCircle },
   { id: "profile", label: "Perfil", icon: User },
 ]
@@ -23,7 +23,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md"
       role="tablist"
-      aria-label="Navegaci\u00f3n principal"
+      aria-label="Navegación principal"
     >
       <div className="mx-auto flex max-w-lg items-center justify-around py-2">
         {tabs.map((tab) => {

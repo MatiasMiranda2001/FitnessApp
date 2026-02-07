@@ -68,7 +68,7 @@ function CircularProgress({
 }
 
 const goalLabels: Record<string, string> = {
-  cut: "Definici\u00f3n",
+  cut: "Definición",
   maintain: "Mantenimiento",
   bulk: "Volumen",
 }
@@ -114,13 +114,12 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
         <h1 className="text-2xl font-bold text-foreground">Inicio</h1>
       </div>
 
-      {/* Calorie Ring */}
       <Card className="border-border bg-card">
         <CardContent className="flex flex-col items-center gap-4 p-6">
           <CircularProgress
             value={todayCalories}
             max={profile.calories}
-            label="Calor\u00edas"
+            label="Calorías"
             unit="kcal"
             color="hsl(var(--primary))"
             size={140}
@@ -129,7 +128,7 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
             <CircularProgress
               value={todayProtein}
               max={profile.protein}
-              label="Prote\u00edna"
+              label="Proteína"
               unit="g"
               color="hsl(var(--chart-2))"
               size={72}
@@ -154,7 +153,6 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
         </CardContent>
       </Card>
 
-      {/* Quick Stats */}
       <div className="grid grid-cols-2 gap-3">
         <Card className="border-border bg-card">
           <CardContent className="flex items-center gap-3 p-4">
@@ -203,13 +201,12 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
             </div>
             <div>
               <p className="text-xl font-bold text-foreground">{weekWorkoutDays}/7</p>
-              <p className="text-xs text-muted-foreground">d\u00edas esta semana</p>
+              <p className="text-xs text-muted-foreground">días esta semana</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Targets Summary */}
       <Card className="border-border bg-card">
         <CardContent className="p-4">
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -217,8 +214,8 @@ export function Dashboard({ profile, workoutLogs, foodEntries }: DashboardProps)
           </h3>
           <div className="flex flex-col gap-3">
             {[
-              { label: "Calor\u00edas", target: profile.calories, unit: "kcal" },
-              { label: "Prote\u00edna", target: profile.protein, unit: "g" },
+              { label: "Calorías", target: profile.calories, unit: "kcal" },
+              { label: "Proteína", target: profile.protein, unit: "g" },
               { label: "Carbohidratos", target: profile.carbs, unit: "g" },
               { label: "Grasas", target: profile.fats, unit: "g" },
             ].map((item) => (

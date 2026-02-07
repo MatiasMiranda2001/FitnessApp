@@ -45,12 +45,14 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
   const lowFatWarning = totals.fats > 0 && totals.fats < 30
 
   function handleAdd() {
-    if (!foodName.trim() || !calories) return
+    const trimmedName = foodName.trim()
+    const calNum = Number(calories)
+    if (!trimmedName || !calNum || calNum <= 0) return
 
     const entry: FoodEntry = {
       id: Date.now().toString(),
-      name: foodName,
-      calories: Number(calories),
+      name: trimmedName,
+      calories: calNum,
       protein: Number(protein) || 0,
       carbs: Number(carbs) || 0,
       fats: Number(fats) || 0,
@@ -58,13 +60,18 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
     }
 
     addFoodEntry(entry)
-    onUpdate()
+
+    // Clear form first, then refresh parent state
     setFoodName("")
     setCalories("")
     setProtein("")
     setCarbs("")
     setFats("")
     setShowForm(false)
+    setScanResult(null)
+
+    // Trigger parent refresh so foodEntries prop updates
+    onUpdate()
   }
 
   function handleDelete(id: string) {
@@ -79,11 +86,11 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
     setTimeout(() => {
       const mockResults = [
         { name: "Pechuga de Pollo y Arroz", cal: 550, p: 45, c: 60, f: 10 },
-        { name: "Salm\u00f3n con Verduras", cal: 480, p: 38, c: 20, f: 22 },
-        { name: "Batido de Prote\u00edna", cal: 320, p: 50, c: 15, f: 8 },
+        { name: "Salmón con Verduras", cal: 480, p: 38, c: 20, f: 22 },
+        { name: "Batido de Proteína", cal: 320, p: 50, c: 15, f: 8 },
         { name: "Tortilla de Pavo", cal: 450, p: 35, c: 42, f: 14 },
-        { name: "Ensalada C\u00e9sar con Pollo", cal: 380, p: 32, c: 18, f: 16 },
-        { name: "Avena con Pl\u00e1tano y Whey", cal: 420, p: 35, c: 55, f: 8 },
+        { name: "Ensalada César con Pollo", cal: 380, p: 32, c: 18, f: 16 },
+        { name: "Avena con Plátano y Whey", cal: 420, p: 35, c: 55, f: 8 },
       ]
       const result = mockResults[Math.floor(Math.random() * mockResults.length)]
 
@@ -132,7 +139,7 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
   return (
     <div className="flex flex-col gap-4 px-4 pb-24 pt-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Nutrici\u00f3n</h1>
+        <h1 className="text-2xl font-bold text-foreground">Nutrición</h1>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -149,25 +156,23 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
             Analizar
           </Button>
           <Button size="sm" onClick={() => setShowForm(!showForm)}>
-            <Plus className="mr-1 h-4 w-4" /> A\u00f1adir
+            <Plus className="mr-1 h-4 w-4" /> Añadir
           </Button>
         </div>
       </div>
 
-      {/* AI Scan result */}
       {scanResult && (
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="flex items-center gap-3 p-3">
             <Sparkles className="h-5 w-5 shrink-0 text-primary" />
             <div>
-              <p className="text-sm font-medium text-foreground">Detecci\u00f3n IA</p>
+              <p className="text-sm font-medium text-foreground">Detección IA</p>
               <p className="text-xs text-muted-foreground">{scanResult}</p>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Low fat warning */}
       {lowFatWarning && (
         <Card className="border-yellow-500/40 bg-yellow-500/10">
           <CardContent className="flex items-start gap-3 p-3">
@@ -175,19 +180,18 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
             <div>
               <p className="text-sm font-medium text-yellow-400">Advertencia de Grasas</p>
               <p className="text-xs text-yellow-300/80">
-                {"Nivel de grasas bajo (<30g) para regulaci\u00f3n hormonal. Aseg\u00farate de incluir grasas saludables."}
+                {"Nivel de grasas bajo (<30g) para regulación hormonal. Asegúrate de incluir grasas saludables."}
               </p>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Calorie summary */}
       <Card className="border-border bg-card">
         <CardContent className="p-4">
           <div className="mb-4 flex items-end justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Calor\u00edas consumidas</p>
+              <p className="text-sm text-muted-foreground">Calorías consumidas</p>
               <p className="text-3xl font-bold text-foreground">{totals.calories}</p>
             </div>
             <p className="text-sm text-muted-foreground">de {profile.calories} kcal</p>
@@ -202,7 +206,7 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
           </div>
           <div className="flex flex-col gap-3">
             <MacroBar
-              label="Prote\u00edna"
+              label="Proteína"
               current={totals.protein}
               target={profile.protein}
               color="hsl(var(--chart-2))"
@@ -223,7 +227,6 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
         </CardContent>
       </Card>
 
-      {/* Add Food Form */}
       {showForm && (
         <Card className="border-border bg-card">
           <CardContent className="flex flex-col gap-3 p-4">
@@ -239,7 +242,7 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-muted-foreground">Calor\u00edas</Label>
+                <Label className="text-xs text-muted-foreground">Calorías</Label>
                 <Input
                   className="mt-1 bg-secondary"
                   type="number"
@@ -249,7 +252,7 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Prote\u00edna (g)</Label>
+                <Label className="text-xs text-muted-foreground">Proteína (g)</Label>
                 <Input
                   className="mt-1 bg-secondary"
                   type="number"
@@ -286,7 +289,6 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
         </Card>
       )}
 
-      {/* Food Log */}
       <div>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Registro de Hoy
@@ -294,7 +296,7 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
         {todayFood.length === 0 ? (
           <Card className="border-border bg-card">
             <CardContent className="p-6 text-center text-sm text-muted-foreground">
-              No hay alimentos registrados hoy. Pulsa A\u00f1adir para comenzar.
+              No hay alimentos registrados hoy. Pulsa Añadir para comenzar.
             </CardContent>
           </Card>
         ) : (
