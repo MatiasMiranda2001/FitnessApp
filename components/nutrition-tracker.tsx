@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -17,13 +17,19 @@ interface NutritionTrackerProps {
 
 export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTrackerProps) {
   const [showForm, setShowForm] = useState(false)
+  
+  // Estados para los datos de la comida
   const [foodName, setFoodName] = useState("")
   const [calories, setCalories] = useState("")
   const [protein, setProtein] = useState("")
   const [carbs, setCarbs] = useState("")
   const [fats, setFats] = useState("")
+  
   const [scanning, setScanning] = useState(false)
   const [scanResult, setScanResult] = useState<string | null>(null)
+  
+  // ESTO ES LO IMPORTANTE: La referencia al input invisible
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const todayStr = new Date().toISOString().split("T")[0]
 
@@ -61,7 +67,6 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
 
     addFoodEntry(entry)
 
-    // Clear form first, then refresh parent state
     setFoodName("")
     setCalories("")
     setProtein("")
@@ -69,8 +74,6 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
     setFats("")
     setShowForm(false)
     setScanResult(null)
-
-    // Trigger parent refresh so foodEntries prop updates
     onUpdate()
   }
 
@@ -79,58 +82,65 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
     onUpdate()
   }
 
-  function handleScanMeal() {
+  // ESTA ES LA FUNCIÓN REAL (NO SIMULADA)
+  async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // 1. Empezamos a cargar
     setScanning(true)
     setScanResult(null)
+    setShowForm(true) 
 
-    setTimeout(() => {
-      const mockResults = [
-        { name: "Pechuga de Pollo y Arroz", cal: 550, p: 45, c: 60, f: 10 },
-        { name: "Salmón con Verduras", cal: 480, p: 38, c: 20, f: 22 },
-        { name: "Batido de Proteína", cal: 320, p: 50, c: 15, f: 8 },
-        { name: "Tortilla de Pavo", cal: 450, p: 35, c: 42, f: 14 },
-        { name: "Ensalada César con Pollo", cal: 380, p: 32, c: 18, f: 16 },
-        { name: "Avena con Plátano y Whey", cal: 420, p: 35, c: 55, f: 8 },
-      ]
-      const result = mockResults[Math.floor(Math.random() * mockResults.length)]
+    const formData = new FormData()
+    formData.append("image", file)
 
-      setScanResult(`${result.name} - ${result.cal} kcal`)
-      setFoodName(result.name)
-      setCalories(String(result.cal))
-      setProtein(String(result.p))
-      setCarbs(String(result.c))
-      setFats(String(result.f))
+    try {
+      // 2. Llamamos a TU servidor (que llama a Gemini)
+      const response = await fetch("/api/analyze-food", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) throw new Error("Error de conexión")
+
+      const data = await response.json()
+
+      if (data.error) throw new Error(data.error)
+
+      // 3. Rellenamos el formulario con lo que dijo la IA
+      setFoodName(data.food_name || "Comida detectada")
+      setCalories(String(data.calories || ""))
+      setProtein(String(data.protein || ""))
+      setCarbs(String(data.carbs || ""))
+      setFats(String(data.fats || ""))
+      
+      setScanResult(`¡Detectado! ${data.food_name}`)
+
+    } catch (error) {
+      console.error(error)
+      setScanResult("No pude reconocer la comida. Intenta de nuevo.")
+    } finally {
       setScanning(false)
-      setShowForm(true)
-    }, 2000)
+      // Limpiamos el input para poder subir la misma foto si queremos
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    }
   }
 
-  function MacroBar({
-    label,
-    current,
-    target,
-    color,
-  }: {
-    label: string
-    current: number
-    target: number
-    color: string
-  }) {
-    const pct = Math.min((current / target) * 100, 100)
+  function MacroBar({ label, current, target, color }: any) {
+    const pct = target > 0 ? Math.min((current / target) * 100, 100) : 0
     return (
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-muted-foreground">{label}</span>
           <span className="text-xs text-foreground">
-            {current}
-            <span className="text-muted-foreground">/{target}g</span>
+            {current}<span className="text-muted-foreground">/{target}g</span>
           </span>
         </div>
-        <div className="h-2 rounded-full bg-secondary">
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${pct}%`, backgroundColor: color }}
-          />
+        <div className="h-2 rounded-full bg-secondary overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
         </div>
       </div>
     )
@@ -141,11 +151,23 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Nutrición</h1>
         <div className="flex gap-2">
+          
+          {/* AQUÍ ESTÁ EL TRUCO: Un input invisible */}
+          <input 
+            type="file" 
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            className="hidden" 
+            accept="image/*"
+            capture="environment" 
+          />
+          
+          {/* El botón ahora hace clic en el input invisible */}
           <Button
             variant="outline"
             size="sm"
             className="bg-transparent"
-            onClick={handleScanMeal}
+            onClick={() => fileInputRef.current?.click()} 
             disabled={scanning}
           >
             {scanning ? (
@@ -153,20 +175,22 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
             ) : (
               <Camera className="mr-1 h-4 w-4" />
             )}
-            Analizar
+            Analizar Foto
           </Button>
+
           <Button size="sm" onClick={() => setShowForm(!showForm)}>
             <Plus className="mr-1 h-4 w-4" /> Añadir
           </Button>
         </div>
       </div>
 
+      {/* Resultado de la IA */}
       {scanResult && (
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="flex items-center gap-3 p-3">
             <Sparkles className="h-5 w-5 shrink-0 text-primary" />
             <div>
-              <p className="text-sm font-medium text-foreground">Detección IA</p>
+              <p className="text-sm font-medium text-foreground">IA Gemini</p>
               <p className="text-xs text-muted-foreground">{scanResult}</p>
             </div>
           </CardContent>
@@ -178,153 +202,69 @@ export function NutritionTracker({ profile, foodEntries, onUpdate }: NutritionTr
           <CardContent className="flex items-start gap-3 p-3">
             <AlertTriangle className="h-4 w-4 shrink-0 text-yellow-500" />
             <div>
-              <p className="text-sm font-medium text-yellow-400">Advertencia de Grasas</p>
-              <p className="text-xs text-yellow-300/80">
-                {"Nivel de grasas bajo (<30g) para regulación hormonal. Asegúrate de incluir grasas saludables."}
-              </p>
+              <p className="text-sm font-medium text-yellow-400">Grasas Bajas</p>
+              <p className="text-xs text-yellow-300/80">{"<30g de grasa afecta tus hormonas."}</p>
             </div>
           </CardContent>
         </Card>
       )}
 
+      {/* Resumen de Macros */}
       <Card className="border-border bg-card">
         <CardContent className="p-4">
           <div className="mb-4 flex items-end justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Calorías consumidas</p>
+              <p className="text-sm text-muted-foreground">Calorías hoy</p>
               <p className="text-3xl font-bold text-foreground">{totals.calories}</p>
             </div>
-            <p className="text-sm text-muted-foreground">de {profile.calories} kcal</p>
-          </div>
-          <div className="mb-4 h-3 rounded-full bg-secondary">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
-              style={{
-                width: `${Math.min((totals.calories / profile.calories) * 100, 100)}%`,
-              }}
-            />
+            <p className="text-sm text-muted-foreground">meta: {profile.calories}</p>
           </div>
           <div className="flex flex-col gap-3">
-            <MacroBar
-              label="Proteína"
-              current={totals.protein}
-              target={profile.protein}
-              color="hsl(var(--chart-2))"
-            />
-            <MacroBar
-              label="Carbohidratos"
-              current={totals.carbs}
-              target={profile.carbs}
-              color="hsl(var(--chart-3))"
-            />
-            <MacroBar
-              label="Grasas"
-              current={totals.fats}
-              target={profile.fats}
-              color="hsl(var(--chart-4))"
-            />
+            <MacroBar label="Proteína" current={totals.protein} target={profile.protein} color="hsl(var(--chart-2))" />
+            <MacroBar label="Carbos" current={totals.carbs} target={profile.carbs} color="hsl(var(--chart-3))" />
+            <MacroBar label="Grasas" current={totals.fats} target={profile.fats} color="hsl(var(--chart-4))" />
           </div>
         </CardContent>
       </Card>
 
+      {/* Formulario (Se abre solo al escanear) */}
       {showForm && (
-        <Card className="border-border bg-card">
+        <Card className="border-border bg-card animate-in slide-in-from-top-2 fade-in">
           <CardContent className="flex flex-col gap-3 p-4">
-            <h3 className="text-sm font-semibold text-foreground">Registrar Comida</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-semibold text-foreground">{scanning ? "Analizando..." : "Editar"}</h3>
+              {scanning && <Loader2 className="h-4 w-4 animate-spin text-primary"/>}
+            </div>
             <div>
-              <Label className="text-xs text-muted-foreground">Nombre del alimento</Label>
-              <Input
-                className="mt-1 bg-secondary"
-                value={foodName}
-                onChange={(e) => setFoodName(e.target.value)}
-                placeholder="Ej: Pechuga de pollo"
-              />
+              <Label className="text-xs">Nombre</Label>
+              <Input className="mt-1 bg-secondary" value={foodName} onChange={(e) => setFoodName(e.target.value)} disabled={scanning} />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs text-muted-foreground">Calorías</Label>
-                <Input
-                  className="mt-1 bg-secondary"
-                  type="number"
-                  value={calories}
-                  onChange={(e) => setCalories(e.target.value)}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Proteína (g)</Label>
-                <Input
-                  className="mt-1 bg-secondary"
-                  type="number"
-                  value={protein}
-                  onChange={(e) => setProtein(e.target.value)}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Carbos (g)</Label>
-                <Input
-                  className="mt-1 bg-secondary"
-                  type="number"
-                  value={carbs}
-                  onChange={(e) => setCarbs(e.target.value)}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Grasas (g)</Label>
-                <Input
-                  className="mt-1 bg-secondary"
-                  type="number"
-                  value={fats}
-                  onChange={(e) => setFats(e.target.value)}
-                  placeholder="0"
-                />
-              </div>
+              <div><Label className="text-xs">Calorías</Label><Input type="number" className="mt-1 bg-secondary" value={calories} onChange={(e) => setCalories(e.target.value)} disabled={scanning} /></div>
+              <div><Label className="text-xs">Proteína</Label><Input type="number" className="mt-1 bg-secondary" value={protein} onChange={(e) => setProtein(e.target.value)} disabled={scanning} /></div>
+              <div><Label className="text-xs">Carbos</Label><Input type="number" className="mt-1 bg-secondary" value={carbs} onChange={(e) => setCarbs(e.target.value)} disabled={scanning} /></div>
+              <div><Label className="text-xs">Grasas</Label><Input type="number" className="mt-1 bg-secondary" value={fats} onChange={(e) => setFats(e.target.value)} disabled={scanning} /></div>
             </div>
-            <Button onClick={handleAdd} disabled={!foodName.trim() || !calories}>
-              Registrar Comida
-            </Button>
+            <Button onClick={handleAdd} disabled={!foodName || scanning}>{scanning ? "Procesando..." : "Guardar"}</Button>
           </CardContent>
         </Card>
       )}
 
-      <div>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Registro de Hoy
-        </h3>
-        {todayFood.length === 0 ? (
-          <Card className="border-border bg-card">
-            <CardContent className="p-6 text-center text-sm text-muted-foreground">
-              No hay alimentos registrados hoy. Pulsa Añadir para comenzar.
+      {/* Lista de comidas */}
+      <div className="flex flex-col gap-2">
+        <h3 className="text-xs font-semibold uppercase text-muted-foreground">Hoy</h3>
+        {todayFood.map((entry) => (
+          <Card key={entry.id} className="border-border bg-card">
+            <CardContent className="flex items-center justify-between p-3">
+              <div>
+                <p className="text-sm font-medium">{entry.name}</p>
+                <p className="text-xs text-muted-foreground">{entry.calories} kcal | P:{entry.protein} C:{entry.carbs} F:{entry.fats}</p>
+              </div>
+              <Trash2 className="h-4 w-4 text-muted-foreground cursor-pointer" onClick={() => handleDelete(entry.id)} />
             </CardContent>
           </Card>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {todayFood.map((entry) => (
-              <Card key={entry.id} className="border-border bg-card">
-                <CardContent className="flex items-center justify-between p-3">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{entry.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {entry.calories} kcal | P: {entry.protein}g C: {entry.carbs}g G:{" "}
-                      {entry.fats}g
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(entry.id)}
-                    className="text-muted-foreground hover:text-destructive"
-                    aria-label="Eliminar entrada"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+        ))}
       </div>
     </div>
-  )
+    )
 }
