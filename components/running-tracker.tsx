@@ -32,7 +32,7 @@ function fmtTime(sec: number) {
 }
 
 function fmtPace(secPerKm: number) {
-  if (!secPerKm || !isFinite(secPerKm)) return "--:--"
+  if (!secPerKm || !isFinite(secPerKm) || secPerKm > 3600) return "--:--"
   const m = Math.floor(secPerKm / 60)
   const s = Math.round(secPerKm % 60)
   return `${m}:${String(s).padStart(2, "0")}`
@@ -311,10 +311,10 @@ export function RunningTracker({ runningLogs, onBack, onUpdate }: RunningTracker
   // PANTALLA: ACTIVO (GPS corriendo)
   // ─────────────────────────────────────────────────────────────
   if (screen === "active") {
-    const pace = distanceKm > 0 && elapsedSec > 0 ? elapsedSec / distanceKm : 0
+    const pace = distanceKm > 0.01 && elapsedSec > 0 ? elapsedSec / distanceKm : 0
 
     return (
-      <div className="fixed inset-0 z-50 bg-background flex flex-col">
+      <div className="fixed inset-0 z-[100] bg-background flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-6 pb-4 border-b border-border">
           <h2 className="text-lg font-bold">Salida en curso</h2>
@@ -369,7 +369,7 @@ export function RunningTracker({ runningLogs, onBack, onUpdate }: RunningTracker
         </div>
 
         {/* Controles */}
-        <div className="px-4 pb-10 flex gap-3">
+        <div className="px-4 pb-24 flex gap-3">
           {isPaused ? (
             <>
               <Button variant="outline" size="lg" className="flex-1 h-14" onClick={handleResume}>
