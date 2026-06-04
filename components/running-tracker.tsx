@@ -362,7 +362,7 @@ export function RunningTracker({ runningLogs, onBack, onUpdate }: RunningTracker
             <div className="bg-yellow-50 border border-yellow-300 rounded-lg px-4 py-3 flex gap-2 max-w-xs">
               <AlertTriangle className="h-4 w-4 text-yellow-600 shrink-0 mt-0.5" />
               <p className="text-xs text-yellow-700">
-                En iPhone, si la pantalla se apaga el GPS puede perder precisión. Mantené la pantalla activa o usá tu Apple Watch y editá los datos al terminar.
+                En usuarios con dispositivos iOS es posible que, si la pantalla se apaga, el GPS pierda precisión. Mantené la pantalla activa o usá tu reloj inteligente y editá los datos al terminar.
               </p>
             </div>
           )}
