@@ -17,7 +17,7 @@ function extractJsonObject(raw: string): string | null {
 
 async function callGemini(apiKey: string, base64Image: string, mimeType: string) {
   const genAI = new GoogleGenerativeAI(apiKey)
-  const model = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" })
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
   const prompt = `
     Actúa como nutricionista. Analiza esta foto.
     Devuelve SOLO un JSON válido (sin markdown, sin explicaciones) con este formato exacto:
