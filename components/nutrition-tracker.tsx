@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Plus, ChevronLeft, ChevronRight, Utensils, Camera, Sparkles, Loader2, Search, Pencil, Trash2, RefreshCw, Minus } from "lucide-react"
+import { Plus, ChevronLeft, ChevronRight, Utensils, Camera, Sparkles, Loader2, Search, Pencil, Trash2, RefreshCw, Minus, Zap } from "lucide-react"
+import Link from "next/link"
 import type { UserProfile, FoodEntry } from "@/lib/types"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -33,6 +34,7 @@ interface NutritionTrackerProps {
 export function NutritionTracker({ profile, foodEntries, onUpdate, scanTrigger }: NutritionTrackerProps) {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [isScanOpen, setIsScanOpen] = useState(false)
+  const [showScanLimit, setShowScanLimit] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analyzedFood, setAnalyzedFood] = useState<Partial<FoodEntry> | null>(null)
@@ -86,6 +88,13 @@ export function NutritionTracker({ profile, foodEntries, onUpdate, scanTrigger }
 
       const result = await response.json()
 
+      if (response.status === 402) {
+        setPreviewUrl(null)
+        setIsScanOpen(false)
+        setShowScanLimit(true)
+        return
+      }
+
       if (response.ok && result) {
         // 4. Mapeamos la respuesta de tu API a nuestro formato interno
         setAnalyzedFood({
@@ -138,8 +147,8 @@ export function NutritionTracker({ profile, foodEntries, onUpdate, scanTrigger }
     try {
       const res = await fetch("/api/food/log", { method: "POST" })
       if (res.status === 402) {
-        const json = await res.json()
-        setFoodLimitError(json.message)
+        setIsScanOpen(false)
+        setShowScanLimit(true)
         return
       }
     } catch { /* si la API no responde, permitir igualmente */ }
@@ -239,8 +248,7 @@ export function NutritionTracker({ profile, foodEntries, onUpdate, scanTrigger }
     try {
       const res = await fetch("/api/food/log", { method: "POST" })
       if (res.status === 402) {
-        const json = await res.json()
-        setFoodLimitError(json.message)
+        setShowScanLimit(true)
         return
       }
     } catch { /* si la API no responde, permitir igualmente */ }
@@ -408,6 +416,31 @@ export function NutritionTracker({ profile, foodEntries, onUpdate, scanTrigger }
               </SheetContent>
            </Sheet>
 
+           {/* Modal: sin escaneos */}
+           <Dialog open={showScanLimit} onOpenChange={setShowScanLimit}>
+             <DialogContent className="sm:max-w-sm text-center">
+               <div className="flex flex-col items-center gap-4 py-2">
+                 <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+                   <Camera className="h-8 w-8 text-destructive" />
+                 </div>
+                 <div>
+                   <h2 className="text-xl font-bold mb-1">Te quedaste sin escaneos</h2>
+                   <p className="text-sm text-muted-foreground">Usaste todos tus escaneos del mes. Si querés seguir escaneando tus comidas con IA, podés pasarte al Plan Pro.</p>
+                 </div>
+                 <div className="w-full space-y-2 pt-2">
+                   <Link href="/billing" onClick={() => setShowScanLimit(false)}>
+                     <Button className="w-full font-semibold gap-2">
+                       <Zap className="h-4 w-4" /> Ver Plan Pro
+                     </Button>
+                   </Link>
+                   <Button variant="ghost" className="w-full" onClick={() => setShowScanLimit(false)}>
+                     Ahora no
+                   </Button>
+                 </div>
+               </div>
+             </DialogContent>
+           </Dialog>
+
            {/* 2. ESCÁNER IA */}
            <Dialog open={isScanOpen} onOpenChange={(open) => {
              setIsScanOpen(open)
@@ -419,7 +452,20 @@ export function NutritionTracker({ profile, foodEntries, onUpdate, scanTrigger }
              }
            }}>
               <DialogTrigger asChild>
-                 <Button className="h-14 rounded-xl flex items-center gap-2 bg-brand-gradient text-white shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:scale-[1.02] transition-all">
+                 <Button
+                   className="h-14 rounded-xl flex items-center gap-2 bg-brand-gradient text-white shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:scale-[1.02] transition-all"
+                   onClick={async (e) => {
+                     // Chequear límite antes de abrir
+                     try {
+                       const res = await fetch("/api/analyze-food/check", { method: "GET" }).catch(() => null)
+                       if (res?.status === 402) {
+                         e.preventDefault()
+                         setShowScanLimit(true)
+                         return
+                       }
+                     } catch {}
+                   }}
+                 >
                     <Sparkles className="h-5 w-5" /> IA Scan
                  </Button>
               </DialogTrigger>

@@ -324,10 +324,10 @@ export function ProfileView({ profile, workoutLogs, foodEntries = [], onReset }:
       <div className="mt-2 pb-2 text-center space-y-1">
         <p className="text-xs text-muted-foreground">¿Tenés ideas, sugerencias o necesitás ayuda?</p>
         <a
-          href="mailto:Rendi@gmail.com"
+          href="mailto:contacto.rendi@gmail.com"
           className="text-xs font-medium text-primary hover:underline"
         >
-          Rendi@gmail.com
+          contacto.rendi@gmail.com
         </a>
         <p className="text-[10px] text-muted-foreground/50 pt-1">Rendi · Hecho con ❤️ en Argentina</p>
       </div>
