@@ -385,11 +385,35 @@ function ProgressSection({
   // así que múltiples logs del mismo día son la misma sesión)
   const sessions = new Set(logsInPeriod.map(l => l.date)).size
 
-  // Volumen total del período (kg × reps)
-  const totalVolume = logsInPeriod.reduce(
-    (acc, log) => acc + (log.sets ?? []).reduce((s, set) => s + (set.weight ?? 0) * (set.reps ?? 0), 0),
-    0
-  )
+  // Frecuencia semanal promedio = sesiones / (días del período / 7)
+  // Mucho más útil que "volumen total en kg" porque le dice al usuario
+  // si está entrenando con la frecuencia adecuada (3-5/sem es óptimo).
+  const avgFrequencyPerWeek = periodDays > 0
+    ? Math.round((sessions / (periodDays / 7)) * 10) / 10
+    : 0
+
+  // Racha actual de días entrenando consecutivos (mirando todo el historial, no solo el período)
+  // Útil para mantener la motivación — todos entienden "días seguidos".
+  const currentStreak = (() => {
+    if (!workoutLogs.length) return 0
+    const uniqueDates = [...new Set(workoutLogs.map(l => l.date))].sort().reverse()
+    let streak = 0
+    const today = new Date()
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`
+    let cursor = new Date(today)
+    // Si el usuario no entrenó hoy todavía, empezamos a contar desde ayer (no rompe la racha)
+    if (uniqueDates[0] !== todayStr) cursor.setDate(cursor.getDate() - 1)
+    for (let i = 0; i < uniqueDates.length; i++) {
+      const cursorStr = `${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,"0")}-${String(cursor.getDate()).padStart(2,"0")}`
+      if (uniqueDates.includes(cursorStr)) {
+        streak++
+        cursor.setDate(cursor.getDate() - 1)
+      } else {
+        break
+      }
+    }
+    return streak
+  })()
 
   // PR: ejercicio con mayor mejora de peso máximo en el período (vs anterior al cutoff)
   const prExercise = (() => {
@@ -414,17 +438,19 @@ function ProgressSection({
     return best
   })()
 
-  // Gráfico volumen semanal (kg totales por semana)
+  // Gráfico "Sesiones por semana" — más intuitivo que kg totales.
+  // Te dice de un vistazo cuántos días entrenaste cada semana.
+  // Una barra de 4-5 = excelente, 2-3 = correcto, 0-1 = quedaste corto.
   const totalWeeks = Math.ceil(periodDays / 7)
-  const weeklyVolume = Array.from({ length: totalWeeks }, (_, i) => {
+  const weeklySessions = Array.from({ length: totalWeeks }, (_, i) => {
     const weekStart = new Date(cutoff); weekStart.setDate(weekStart.getDate() + i * 7)
     const weekEnd   = new Date(cutoff); weekEnd.setDate(weekEnd.getDate() + (i + 1) * 7)
     const wStartStr = `${weekStart.getFullYear()}-${String(weekStart.getMonth()+1).padStart(2,"0")}-${String(weekStart.getDate()).padStart(2,"0")}`
     const wEndStr   = `${weekEnd.getFullYear()}-${String(weekEnd.getMonth()+1).padStart(2,"0")}-${String(weekEnd.getDate()).padStart(2,"0")}`
-    const vol = logsInPeriod
-      .filter(l => l.date >= wStartStr && l.date < wEndStr)
-      .reduce((acc, log) => acc + (log.sets ?? []).reduce((s, set) => s + (set.weight ?? 0) * (set.reps ?? 0), 0), 0)
-    return { label: `S${i + 1}`, value: vol }
+    const uniqueDays = new Set(
+      logsInPeriod.filter(l => l.date >= wStartStr && l.date < wEndStr).map(l => l.date)
+    ).size
+    return { label: `S${i + 1}`, value: uniqueDays }
   })
 
   // Adherencia calórica: % días donde las kcal del día están dentro de ±20% del TDEE
@@ -445,7 +471,7 @@ function ProgressSection({
     return { label: `S${i + 1}`, value: Math.round((goodDays / dayKeys.length) * 100) }
   })
 
-  const maxVol = Math.max(...weeklyVolume.map(w => w.value), 1)
+  const maxSessions = Math.max(...weeklySessions.map(w => w.value), 1)
   const noData = sessions === 0 && foodInPeriod.length === 0
 
   return (
@@ -477,26 +503,29 @@ function ProgressSection({
         </div>
       ) : (
         <>
-          {/* Métricas clave — 3 cards estilo mockup */}
+          {/* Métricas clave — 3 cards con datos accionables */}
           <div className="grid grid-cols-3 gap-2">
-            {/* Volumen total */}
-            <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-3 text-center">
-              <p className="text-xl font-extrabold text-primary leading-none tabular-nums">
-                {totalVolume >= 1000 ? `${(totalVolume / 1000).toFixed(1)}t` : totalVolume}
-                <span className="text-xs font-bold ml-0.5">{totalVolume >= 1000 ? "" : "kg"}</span>
+            {/* Racha de días entrenando (motivacional, todos lo entienden) */}
+            <div className="bg-gradient-to-br from-orange-500/10 to-red-500/5 border border-orange-500/20 rounded-xl p-3 text-center">
+              <p className="text-xl font-extrabold text-orange-500 leading-none tabular-nums">
+                {currentStreak > 0 ? <>🔥{currentStreak}</> : "—"}
               </p>
-              <p className="text-[10px] text-muted-foreground mt-1 font-semibold">Volumen total</p>
+              <p className="text-[10px] text-muted-foreground mt-1 font-semibold">
+                {currentStreak === 1 ? "Día de racha" : currentStreak > 1 ? "Días seguidos" : "Sin racha activa"}
+              </p>
             </div>
 
-            {/* Sesiones */}
+            {/* Sesiones totales del período */}
             <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-center">
               <p className="text-xl font-extrabold text-emerald-500 leading-none tabular-nums">
-                {sessions} <span className="text-xs font-bold">ses.</span>
+                {sessions}
               </p>
-              <p className="text-[10px] text-muted-foreground mt-1 font-semibold">Entrenamientos</p>
+              <p className="text-[10px] text-muted-foreground mt-1 font-semibold">
+                {sessions === 1 ? "Entrenamiento" : "Entrenamientos"}
+              </p>
             </div>
 
-            {/* PR */}
+            {/* PR — siempre útil para ver progreso real */}
             <div className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/20 rounded-xl p-3 text-center">
               {prExercise ? (
                 <>
@@ -519,25 +548,50 @@ function ProgressSection({
             </div>
           </div>
 
-          {/* Gráfico volumen semanal */}
-          {weeklyVolume.some(w => w.value > 0) && (
+          {/* Frecuencia promedio — destacado abajo de las cards */}
+          {sessions > 0 && (
+            <div className="bg-secondary/30 rounded-xl px-3 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-primary" />
+                <span className="text-xs font-semibold text-foreground">Frecuencia promedio</span>
+              </div>
+              <div className="text-right">
+                <span className="text-base font-extrabold text-primary tabular-nums">{avgFrequencyPerWeek}</span>
+                <span className="text-xs text-muted-foreground ml-1">ses / semana</span>
+              </div>
+            </div>
+          )}
+
+          {/* Gráfico: días entrenando por semana — más simple e intuitivo que kg totales */}
+          {weeklySessions.some(w => w.value > 0) && (
             <div className="bg-secondary/30 rounded-xl p-3 space-y-2">
-              <p className="text-xs font-bold text-muted-foreground">Volumen semanal (kg totales)</p>
+              <div className="flex items-baseline justify-between">
+                <p className="text-xs font-bold text-muted-foreground">Constancia semanal</p>
+                <p className="text-[10px] text-muted-foreground">días entrenando</p>
+              </div>
               <div className="flex items-end gap-1.5 h-16">
-                {weeklyVolume.map((w, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                {weeklySessions.map((w, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                    {/* Etiqueta con el número arriba de la barra */}
+                    <span className="text-[10px] font-bold text-primary tabular-nums">
+                      {w.value > 0 ? w.value : ""}
+                    </span>
                     <div
                       className="w-full rounded-t-md transition-all duration-500"
                       style={{
-                        height: `${Math.max(4, (w.value / maxVol) * 52)}px`,
+                        height: `${Math.max(4, (w.value / maxSessions) * 44)}px`,
                         background: "linear-gradient(180deg, hsl(var(--primary) / .7), hsl(var(--primary)))",
                       }}
-                      title={`${w.value.toLocaleString()} kg`}
+                      title={`Semana ${w.label.replace("S", "")}: ${w.value} ${w.value === 1 ? "día" : "días"} entrenando`}
                     />
                     <span className="text-[9px] text-muted-foreground">{w.label}</span>
                   </div>
                 ))}
               </div>
+              {/* Leyenda con tip */}
+              <p className="text-[10px] text-muted-foreground/70 text-center pt-1">
+                Ideal: 3-5 días por semana
+              </p>
             </div>
           )}
 
