@@ -6,7 +6,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/server"
-import { RendiLogo } from "@/components/fittrack-logo"
+import { FitTrackLogo as RendiLogo } from "@/components/fittrack-logo"
 
 export default async function LandingPage() {
   const supabase = await createClient()
