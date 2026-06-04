@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Paleta inspirada en Fitia: verde teal vibrante + coral cálido.
+ * Transmite frescura, salud y cumplimiento de objetivos.
+ */
+@layer base {
+  :root {
+    /* Fondo: cream cálido tipo Fitia — transmite calidez y "alimentación natural" */
+    --background: 45 50% 97%;
+    --foreground: 222 47% 11%;
+
+    /* Tarjetas: blanco puro para resaltar sobre el cream del fondo */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* PRIMARY: violeta FitTrack (#7C3AED) */
+    --primary: 263 71% 57%;
+    --primary-foreground: 0 0% 100%;
+
+    /* SECONDARY: cream un tono más oscuro para botones secundarios y backgrounds */
+    --secondary: 45 40% 93%;
+    --secondary-foreground: 222 47% 11%;
+
+    /* ACCENT: coral cálido para badges Pro y warnings de calorías */
+    --accent: 24 95% 53%;
+    --accent-foreground: 0 0% 100%;
+
+    --muted: 45 30% 93%;
+    --muted-foreground: 215 16% 47%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 45 25% 90%;
+    --input: 45 25% 90%;
+    --ring: 263 71% 57%;
+
+    --radius: 1rem;
+
+    /* Cream blob para decoraciones orgánicas tipo Fitia */
+    --cream-blob: 48 60% 91%;
+    --cream-blob-soft: 45 50% 95%;
+  }
+
+  .dark {
+    /* Fondo: slate profundo con tinte teal sutil */
+    --background: 200 30% 6%;
+    --foreground: 0 0% 98%;
+
+    --card: 200 25% 9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 200 25% 9%;
+    --popover-foreground: 0 0% 98%;
+
+    /* En dark, el violeta brilla más para mantener jerarquía */
+    --primary: 255 91% 75%;
+    --primary-foreground: 263 60% 15%;
+
+    --secondary: 200 20% 14%;
+    --secondary-foreground: 0 0% 98%;
+
+    --accent: 24 95% 60%;
+    --accent-foreground: 200 30% 6%;
+
+    --muted: 200 20% 14%;
+    --muted-foreground: 215 20% 65%;
+
+    --destructive: 0 65% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 200 20% 14%;
+    --input: 200 20% 14%;
+    --ring: 255 91% 75%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  /* Tipografía: títulos con Space Grotesk + tracking tight para mood deportivo */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-space), sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  /* Scrollbar custom para que el mint del fondo sea coherente */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--secondary));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+}
+
+/* Utilidad: gradiente de marca consistente para CTAs Pro */
+@layer utilities {
+  .bg-brand-gradient {
+    background: linear-gradient(135deg, hsl(255 91% 75%) 0%, hsl(263 71% 50%) 100%);
+  }
+  .bg-brand-gradient-soft {
+    background: linear-gradient(135deg, hsl(255 91% 96%) 0%, hsl(263 71% 92%) 100%);
+  }
+  .text-brand-gradient {
+    background: linear-gradient(135deg, hsl(255 91% 69%) 0%, hsl(263 71% 50%) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+}
