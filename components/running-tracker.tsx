@@ -15,6 +15,7 @@ import type { RunningLog, GpsPoint } from "@/lib/types"
 import { addRunningLog, updateRunningLog, deleteRunningLog } from "@/lib/store"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { RunningMap, RunningMapLegend } from "@/components/running-map"
 
 interface RunningTrackerProps {
   runningLogs: RunningLog[]
@@ -133,6 +134,8 @@ export function RunningTracker({ runningLogs, onBack, onUpdate }: RunningTracker
   const [gpsGranted, setGpsGranted] = useState<boolean | null>(null)
   const [lastFinished, setLastFinished] = useState<RunningLog | null>(null)
   const [showIosWarning, setShowIosWarning] = useState(false)
+  // ID de la salida expandida del historial (muestra mapa si tiene GPS)
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
 
   const watchRef = useRef<number | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -315,76 +318,101 @@ export function RunningTracker({ runningLogs, onBack, onUpdate }: RunningTracker
 
     return (
       <div className="fixed inset-0 z-[100] bg-background flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-6 pb-4 border-b border-border">
-          <h2 className="text-lg font-bold">Salida en curso</h2>
+        {/* Header compacto */}
+        <div className="flex items-center justify-between px-4 pt-6 pb-3 border-b border-border shrink-0">
+          <h2 className="text-base font-bold">Salida en curso</h2>
           {isPaused
             ? <Badge variant="outline" className="text-yellow-600 border-yellow-400 bg-yellow-50">En pausa</Badge>
             : <Badge variant="outline" className="text-green-600 border-green-400 bg-green-50 animate-pulse">● Grabando</Badge>
           }
         </div>
 
-        {/* Métricas principales */}
-        <div className="flex-1 flex flex-col items-center justify-center gap-8 px-4">
-          {/* Distancia */}
-          <div className="text-center">
-            <p className="text-7xl font-black tabular-nums tracking-tighter text-primary">
-              {distanceKm.toFixed(2)}
-            </p>
-            <p className="text-sm text-muted-foreground font-medium mt-1">kilómetros</p>
-          </div>
+        {/* MAPA — ocupa la mayor parte de la pantalla */}
+        <div className="flex-1 px-3 pt-3 relative min-h-0">
+          <RunningMap points={gpsPath} liveMode={!isPaused} height="100%" invalidateOnMount />
 
-          {/* Tiempo y ritmo */}
-          <div className="flex gap-8 text-center">
-            <div>
-              <p className="text-3xl font-bold tabular-nums">{fmtTime(elapsedSec)}</p>
-              <p className="text-xs text-muted-foreground mt-1">tiempo</p>
-            </div>
-            <div className="w-px bg-border" />
-            <div>
-              <p className="text-3xl font-bold tabular-nums">{fmtPace(pace)}</p>
-              <p className="text-xs text-muted-foreground mt-1">min/km</p>
-            </div>
-          </div>
-
-          {/* GPS status */}
-          {gpsError && (
-            <div className="bg-destructive/10 border border-destructive/30 rounded-lg px-4 py-2 text-center">
-              <p className="text-xs text-destructive">{gpsError}</p>
-            </div>
-          )}
+          {/* Overlay: avisos GPS sobre el mapa */}
           {gpsGranted === null && !gpsError && (
-            <p className="text-xs text-muted-foreground animate-pulse">Buscando señal GPS...</p>
+            <div className="absolute top-5 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur-sm border border-border rounded-full px-3 py-1.5 shadow-md">
+              <p className="text-[11px] text-muted-foreground animate-pulse flex items-center gap-1.5">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                Buscando señal GPS...
+              </p>
+            </div>
+          )}
+          {gpsError && (
+            <div className="absolute top-5 left-3 right-3 bg-destructive/95 text-white rounded-xl px-3 py-2 shadow-lg">
+              <p className="text-xs">{gpsError}</p>
+            </div>
           )}
 
-          {/* Aviso iOS */}
+          {/* Aviso iOS solo aparece la primera vez */}
           {showIosWarning && isIos && (
-            <div className="bg-yellow-50 border border-yellow-300 rounded-lg px-4 py-3 flex gap-2 max-w-xs">
+            <div className="absolute bottom-3 left-3 right-3 bg-yellow-50 border border-yellow-300 rounded-xl px-3 py-2.5 flex gap-2 shadow-md">
               <AlertTriangle className="h-4 w-4 text-yellow-600 shrink-0 mt-0.5" />
-              <p className="text-xs text-yellow-700">
-                En usuarios con dispositivos iOS es posible que, si la pantalla se apaga, el GPS pierda precisión. Mantené la pantalla activa o usá tu reloj inteligente y editá los datos al terminar.
+              <p className="text-[11px] text-yellow-800 leading-snug flex-1">
+                En dispositivos iOS, si bloqueás la pantalla el GPS puede perder precisión.
               </p>
+              <button
+                onClick={() => setShowIosWarning(false)}
+                className="text-yellow-600 hover:text-yellow-800 shrink-0"
+                aria-label="Cerrar aviso"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
           )}
         </div>
 
+        {/* Métricas en card compacta abajo */}
+        <div className="shrink-0 px-3 pt-3">
+          <div className="bg-card border border-border rounded-2xl px-4 py-3 shadow-lg">
+            <div className="flex items-end justify-between gap-3">
+              {/* Distancia (principal) */}
+              <div className="flex-1">
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Distancia</p>
+                <div className="flex items-baseline gap-1">
+                  <p className="text-4xl font-black tabular-nums tracking-tighter text-primary leading-none">
+                    {distanceKm.toFixed(2)}
+                  </p>
+                  <span className="text-sm font-bold text-muted-foreground">km</span>
+                </div>
+              </div>
+
+              {/* Tiempo */}
+              <div className="text-right">
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Tiempo</p>
+                <p className="text-xl font-extrabold tabular-nums leading-none mt-1">{fmtTime(elapsedSec)}</p>
+              </div>
+
+              {/* Ritmo */}
+              <div className="text-right">
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Ritmo</p>
+                <p className="text-xl font-extrabold tabular-nums leading-none mt-1">{fmtPace(pace)}</p>
+                <p className="text-[9px] text-muted-foreground">min/km</p>
+              </div>
+            </div>
+            <RunningMapLegend />
+          </div>
+        </div>
+
         {/* Controles */}
-        <div className="px-4 pb-24 flex gap-3">
+        <div className="px-3 pt-3 pb-6 flex gap-3 shrink-0">
           {isPaused ? (
             <>
-              <Button variant="outline" size="lg" className="flex-1 h-14" onClick={handleResume}>
+              <Button variant="outline" size="lg" className="flex-1 h-14 rounded-2xl" onClick={handleResume}>
                 <Play className="h-5 w-5 mr-2" /> Retomar
               </Button>
-              <Button variant="destructive" size="lg" className="flex-1 h-14" onClick={handleStop}>
+              <Button variant="destructive" size="lg" className="flex-1 h-14 rounded-2xl" onClick={handleStop}>
                 <Square className="h-5 w-5 mr-2" /> Terminar
               </Button>
             </>
           ) : (
             <>
-              <Button variant="outline" size="lg" className="flex-1 h-14" onClick={handlePause}>
+              <Button variant="outline" size="lg" className="flex-1 h-14 rounded-2xl" onClick={handlePause}>
                 <Pause className="h-5 w-5 mr-2" /> Pausa
               </Button>
-              <Button variant="destructive" size="lg" className="flex-1 h-14" onClick={handleStop}>
+              <Button variant="destructive" size="lg" className="flex-1 h-14 rounded-2xl" onClick={handleStop}>
                 <Square className="h-5 w-5 mr-2" /> Terminar
               </Button>
             </>
@@ -403,6 +431,14 @@ export function RunningTracker({ runningLogs, onBack, onUpdate }: RunningTracker
     return (
       <div className="flex flex-col gap-4 px-4 pb-24 pt-6">
         <h2 className="text-xl font-bold">¡Salida completada! 🎉</h2>
+
+        {/* Mapa del recorrido si hubo GPS */}
+        {gpsPath.length > 1 && (
+          <div>
+            <RunningMap points={gpsPath} liveMode={false} height="220px" />
+            <RunningMapLegend />
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <Card className="bg-primary/5 border-primary/20">
@@ -584,53 +620,78 @@ export function RunningTracker({ runningLogs, onBack, onUpdate }: RunningTracker
           </div>
         ) : (
           <div className="space-y-3">
-            {runningLogs.map((log, idx) => (
-              <Card key={log.id} className="border-border">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {format(new Date(log.date), "EEEE d 'de' MMMM", { locale: es })}
-                      </p>
-                      {idx === 0 && <Badge variant="outline" className="text-primary border-primary/30 bg-primary/5 text-[10px] mt-1">Última salida</Badge>}
+            {runningLogs.map((log, idx) => {
+              const hasGps = !!log.gpsPath && log.gpsPath.length > 1
+              const isExpanded = expandedLogId === log.id
+              return (
+                <Card key={log.id} className="border-border">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {format(new Date(log.date), "EEEE d 'de' MMMM", { locale: es })}
+                        </p>
+                        <div className="flex gap-1.5 mt-1 flex-wrap">
+                          {idx === 0 && <Badge variant="outline" className="text-primary border-primary/30 bg-primary/5 text-[10px]">Última salida</Badge>}
+                          {hasGps && <Badge variant="outline" className="text-[10px] border-emerald-500/30 bg-emerald-500/5 text-emerald-600">📍 Con GPS</Badge>}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingLog(log); setScreen("edit") }}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(log.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingLog(log); setScreen("edit") }}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(log.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="text-center">
-                      <p className="text-xl font-black text-primary">{log.distanceKm.toFixed(2)}</p>
-                      <p className="text-[10px] text-muted-foreground">km</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xl font-bold">{fmtTime(log.durationSec)}</p>
-                      <p className="text-[10px] text-muted-foreground">tiempo</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xl font-bold">{fmtPace(log.paceSeckm)}</p>
-                      <p className="text-[10px] text-muted-foreground">min/km</p>
-                    </div>
-                    {log.calories && (
+                    <div className="flex gap-4">
                       <div className="text-center">
-                        <p className="text-xl font-bold">{log.calories}</p>
-                        <p className="text-[10px] text-muted-foreground">kcal</p>
+                        <p className="text-xl font-black text-primary">{log.distanceKm.toFixed(2)}</p>
+                        <p className="text-[10px] text-muted-foreground">km</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xl font-bold">{fmtTime(log.durationSec)}</p>
+                        <p className="text-[10px] text-muted-foreground">tiempo</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xl font-bold">{fmtPace(log.paceSeckm)}</p>
+                        <p className="text-[10px] text-muted-foreground">min/km</p>
+                      </div>
+                      {log.calories && (
+                        <div className="text-center">
+                          <p className="text-xl font-bold">{log.calories}</p>
+                          <p className="text-[10px] text-muted-foreground">kcal</p>
+                        </div>
+                      )}
+                    </div>
+                    {log.notes && (
+                      <p className="text-xs text-muted-foreground mt-2 flex gap-1 items-center">
+                        <FileText className="h-3 w-3" /> {log.notes}
+                      </p>
+                    )}
+
+                    {/* Botón para ver mapa si la salida tiene GPS guardado */}
+                    {hasGps && (
+                      <button
+                        onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
+                        className="w-full mt-3 text-xs font-semibold text-primary hover:underline flex items-center justify-center gap-1"
+                      >
+                        {isExpanded ? "Ocultar recorrido" : "Ver recorrido en mapa"}
+                      </button>
+                    )}
+
+                    {/* Mapa expandido */}
+                    {hasGps && isExpanded && (
+                      <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-300">
+                        <RunningMap points={log.gpsPath!} liveMode={false} height="220px" invalidateOnMount />
+                        <RunningMapLegend />
                       </div>
                     )}
-                  </div>
-                  {log.notes && (
-                    <p className="text-xs text-muted-foreground mt-2 flex gap-1 items-center">
-                      <FileText className="h-3 w-3" /> {log.notes}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         )}
       </div>
