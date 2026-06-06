@@ -16,6 +16,8 @@ import { addRunningLog, updateRunningLog, deleteRunningLog } from "@/lib/store"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { RunningMap, RunningMapLegend } from "@/components/running-map"
+import { RunningShareCard } from "@/components/running-share-card"
+import { Share2 } from "lucide-react"
 
 interface RunningTrackerProps {
   runningLogs: RunningLog[]
@@ -136,6 +138,8 @@ export function RunningTracker({ runningLogs, onBack, onUpdate }: RunningTracker
   const [showIosWarning, setShowIosWarning] = useState(false)
   // ID de la salida expandida del historial (muestra mapa si tiene GPS)
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
+  // Salida activa para compartir (modal con preview + Web Share API)
+  const [sharingLog, setSharingLog] = useState<RunningLog | null>(null)
 
   const watchRef = useRef<number | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -482,6 +486,28 @@ export function RunningTracker({ runningLogs, onBack, onUpdate }: RunningTracker
             <Button className="w-full font-semibold" size="lg" onClick={() => handleSaveGps()}>
               <Check className="h-4 w-4 mr-2" /> Guardar salida
             </Button>
+            {/* Botón compartir destacado — guarda primero y abre el modal de share */}
+            <Button
+              size="lg"
+              className="w-full font-bold bg-brand-gradient text-white shadow-lg shadow-primary/30 hover:scale-[1.01] transition-all"
+              onClick={() => {
+                // Construimos un log temporal con los datos actuales y abrimos el sharing.
+                // Si el usuario decide guardar después, lo hace con "Guardar salida".
+                const pace = distanceKm > 0 ? Math.round(elapsedSec / distanceKm) : 0
+                const tempLog: RunningLog = {
+                  id: `preview-${Date.now()}`,
+                  date: todayStr(),
+                  distanceKm: Math.round(distanceKm * 100) / 100,
+                  durationSec: elapsedSec,
+                  paceSeckm: pace,
+                  calories: estimateCalories(distanceKm, elapsedSec),
+                  gpsPath: gpsPath.length > 0 ? gpsPath : undefined,
+                }
+                setSharingLog(tempLog)
+              }}
+            >
+              <Share2 className="h-4 w-4 mr-2" /> Compartir en redes
+            </Button>
           </div>
         ) : (
           <div className="mt-2 border border-border rounded-xl p-4">
@@ -637,6 +663,9 @@ export function RunningTracker({ runningLogs, onBack, onUpdate }: RunningTracker
                         </div>
                       </div>
                       <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:bg-primary/10" onClick={() => setSharingLog(log)} aria-label="Compartir">
+                          <Share2 className="h-3.5 w-3.5" />
+                        </Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingLog(log); setScreen("edit") }}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
@@ -695,6 +724,15 @@ export function RunningTracker({ runningLogs, onBack, onUpdate }: RunningTracker
           </div>
         )}
       </div>
+
+      {/* Modal de compartir salida (Web Share API + preview) */}
+      {sharingLog && (
+        <RunningShareCard
+          open={!!sharingLog}
+          onClose={() => setSharingLog(null)}
+          log={sharingLog}
+        />
+      )}
     </div>
   )
 }
