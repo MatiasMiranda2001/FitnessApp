@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
-import { Plus, Copy, Trash2, ChevronDown, ChevronUp, Play, BookOpen, Dumbbell, Search, ExternalLink, Settings2, Pencil, FileSpreadsheet, PersonStanding, ChevronRight } from "lucide-react"
+import { Plus, Copy, Trash2, ChevronDown, ChevronUp, Play, BookOpen, Dumbbell, Search, ExternalLink, Settings2, Pencil, FileSpreadsheet, PersonStanding, ChevronRight, Wand2, Sparkles } from "lucide-react"
 import type { WeeklyRoutine, RoutineDay, RoutineExercise } from "@/lib/types"
 import { defaultExercises } from "@/lib/exercises"
 import { loadData, saveRoutine, deleteRoutine, setActiveRoutine, addCustomExercise } from "@/lib/store"
 import { routineTemplates } from "@/lib/routine-templates"
 import { ImportRoutineModal, ExportRoutineButton } from "@/components/import-routine-modal"
+import { RoutineAiWizard } from "@/components/routine-ai-wizard"
 
 interface RoutineBuilderProps {
   onShowRunning?: () => void
@@ -31,6 +32,7 @@ export function RoutineBuilder({ dataVersion, onUpdate, onStartWorkout, onStartS
   const [search, setSearch] = useState("")
   const [isCreating, setIsCreating] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
+  const [aiWizardOpen, setAiWizardOpen] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [newExerciseName, setNewExerciseName] = useState("")
   const [newExerciseMuscle, setNewExerciseMuscle] = useState("Otro")
@@ -129,6 +131,31 @@ export function RoutineBuilder({ dataVersion, onUpdate, onStartWorkout, onStartS
         </div>
       </div>
 
+      {/* Botón destacado: Crear rutina con IA. Gradiente brand para llamar la atención
+          sin opacar el resto. Sutilmente animado con un Sparkles que pulsea. */}
+      <button
+        onClick={() => setAiWizardOpen(true)}
+        className="group relative w-full overflow-hidden rounded-2xl px-5 py-4 flex items-center gap-4 text-left active:scale-[0.98] transition-transform shadow-lg shadow-primary/20"
+        style={{ background: "linear-gradient(135deg, #6D28D9 0%, #7C3AED 50%, #A78BFA 100%)" }}
+      >
+        {/* Brillo decorativo sutil */}
+        <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+
+        <div className="h-12 w-12 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center shrink-0 relative">
+          <Wand2 className="h-6 w-6 text-white" />
+          <Sparkles className="h-3 w-3 text-white absolute top-1 right-1 animate-pulse" />
+        </div>
+        <div className="flex-1 min-w-0 relative">
+          <div className="flex items-center gap-2">
+            <p className="text-base font-extrabold text-white">Crear con IA</p>
+            <span className="text-[9px] font-bold uppercase tracking-wider bg-white/20 text-white px-1.5 py-0.5 rounded">Nuevo</span>
+          </div>
+          <p className="text-xs text-white/80 leading-tight mt-0.5">Rutina personalizada según tu objetivo, nivel y tiempo</p>
+        </div>
+        <ChevronRight className="h-5 w-5 text-white/80 shrink-0 relative" />
+      </button>
+
       {/* Card de Running — acceso directo, independiente de rutinas */}
       <button
         onClick={onShowRunning}
@@ -212,6 +239,15 @@ export function RoutineBuilder({ dataVersion, onUpdate, onStartWorkout, onStartS
         open={importModalOpen}
         onClose={() => setImportModalOpen(false)}
         onImport={handleImportRoutine}
+      />
+
+      {/* ── Wizard de creación con IA ── */}
+      <RoutineAiWizard
+        open={aiWizardOpen}
+        onClose={() => setAiWizardOpen(false)}
+        onCreated={(routine) => { onUpdate(); setActiveRoutine(routine.id); onUpdate() }}
+        profile={data.profile}
+        workoutLogs={data.workoutLogs}
       />
 
       {/* ── Dialog de confirmación de eliminación ── */}
