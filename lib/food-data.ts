@@ -211,7 +211,7 @@ const rawItems = [
   { id: "arg23", name: "Puchero", portion: "1 plato (350g)", calories: 400, protein: 28, carbs: 32, fat: 16, category: "comida_arg" },
   { id: "arg24", name: "Humita en chala", portion: "1 unidad (150g)", calories: 190, protein: 5, carbs: 30, fat: 6, category: "comida_arg" },
   { id: "arg25", name: "Tamales", portion: "1 unidad (120g)", calories: 220, protein: 9, carbs: 28, fat: 9, category: "comida_arg" },
-  { id: "arg26", name: "Pizza muzzarella (porcón)", portion: "1 porción (120g)", calories: 285, protein: 12, carbs: 33, fat: 12, category: "comida_arg" },
+  { id: "arg26", name: "Pizza muzzarella (porción)", portion: "1 porción (120g)", calories: 285, protein: 12, carbs: 33, fat: 12, category: "comida_arg" },
   { id: "arg27", name: "Fugazzeta", portion: "1 porción (130g)", calories: 310, protein: 13, carbs: 34, fat: 14, category: "comida_arg" },
   { id: "arg28", name: "Fainá", portion: "1 porción (80g)", calories: 190, protein: 7, carbs: 22, fat: 8, category: "comida_arg" },
   { id: "arg29", name: "Provoleta", portion: "100g", calories: 360, protein: 23, carbs: 2, fat: 30, category: "comida_arg" },

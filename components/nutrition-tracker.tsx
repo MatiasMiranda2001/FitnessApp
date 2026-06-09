@@ -271,6 +271,7 @@ export function NutritionTracker({ profile, foodEntries, onUpdate, scanTrigger }
     addFoodEntry(newEntry)
     onUpdate()
     setIsSearchOpen(false)
+    setSearchTerm("")
   }
 
   // Cálculos UI
