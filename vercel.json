@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/send-summary",
       "schedule": "0 23 * * 0"
+    },
+    {
+      "path": "/api/cron/sync-subscriptions",
+      "schedule": "0 6 * * *"
     }
   ]
 }
