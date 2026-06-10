@@ -36,6 +36,18 @@ async function applyPreapprovalStatus(preapprovalId: string) {
   const isActive = preapproval.status === "authorized"
   const svc = createServiceClient()
 
+  // Si el perfil tiene override manual, no lo tocamos desde el webhook
+  const { data: existingProfile } = await svc
+    .from("profiles")
+    .select("mp_preapproval_id")
+    .eq("user_id", userId)
+    .single()
+
+  if (existingProfile?.mp_preapproval_id === "manual-test") {
+    console.log(`[mp/webhook] userId=${userId} tiene override manual, ignorando webhook`)
+    return { ok: true, userId, status: "manual_override_skipped", plan: "pro" } as const
+  }
+
   const { error } = await svc.from("profiles").update({
     plan: isActive ? "pro" : "free",
     mp_preapproval_id: preapprovalId,
