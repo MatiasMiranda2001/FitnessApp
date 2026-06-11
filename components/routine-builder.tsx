@@ -57,15 +57,28 @@ export function RoutineBuilder({ dataVersion, onUpdate, onStartWorkout, onStartS
       return readable || "Ejercicio personalizado"
   }, [allExercises])
 
-  const getLastWeight = useCallback((exerciseId: string): string | null => {
+  // Mismo cálculo de ID efectivo que workout-tracker: si hay customName distinto
+  // al nombre del catálogo, usa un ID compuesto para evitar mezclar historiales.
+  const getEffectiveId = useCallback((exerciseId: string, customName?: string): string => {
+    if (!customName) return exerciseId
+    const catalogName = allExercises.find(e => e.id === exerciseId)?.name ?? ""
+    if (catalogName === customName) return exerciseId
+    const slug = customName.toLowerCase()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
+    return `${exerciseId}__${slug}`
+  }, [allExercises])
+
+  const getLastWeight = useCallback((exerciseId: string, customName?: string): string | null => {
+      const effectiveId = getEffectiveId(exerciseId, customName)
       const logs = data.workoutLogs
-        .filter(l => l.exerciseId === exerciseId && l.sets && l.sets.length > 0)
+        .filter(l => l.exerciseId === effectiveId && l.sets && l.sets.length > 0)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       if (logs.length === 0) return null
       const weights = logs[0].sets.map((s: any) => s.weight).filter((w: number) => w > 0)
       if (weights.length === 0) return null
       return `${Math.max(...weights)} kg`
-  }, [data.workoutLogs])
+  }, [data.workoutLogs, getEffectiveId])
 
   const groupedExercises = useMemo(() => {
     const groups: Record<string, typeof allExercises> = {}
@@ -206,9 +219,9 @@ export function RoutineBuilder({ dataVersion, onUpdate, onStartWorkout, onStartS
                        <div key={i} className="flex justify-between items-center text-sm py-0.5">
                           <span className="font-medium text-foreground/80">{getExerciseName(ex.exerciseId, (ex as any).customName)}</span>
                           <div className="flex items-center gap-2 shrink-0 ml-2">
-                            {getLastWeight(ex.exerciseId) && (
+                            {getLastWeight(ex.exerciseId, (ex as any).customName) && (
                               <span className="text-[11px] text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded">
-                                {getLastWeight(ex.exerciseId)}
+                                {getLastWeight(ex.exerciseId, (ex as any).customName)}
                               </span>
                             )}
                             <span className="text-xs text-muted-foreground opacity-70">{ex.sets} × {ex.reps}</span>
