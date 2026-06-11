@@ -177,6 +177,19 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
     return groups
   }, [allExercises, search])
 
+  // Devuelve un ID único para cada ejercicio. Si tiene customName distinto al
+  // nombre del catálogo, usa un ID compuesto para evitar que dos ejercicios
+  // distintos con el mismo exerciseId base compartan historial.
+  const getEffectiveId = (exerciseId: string, customName?: string): string => {
+    if (!customName) return exerciseId
+    const catalogName = allExercises.find(e => e.id === exerciseId)?.name ?? ""
+    if (catalogName === customName) return exerciseId
+    const slug = customName.toLowerCase()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
+    return `${exerciseId}__${slug}`
+  }
+
   const exerciseHistory = useMemo(() => {
     if (!selectedExercise) return []
     return workoutLogs.filter(l => l.exerciseId === selectedExercise.id).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -389,13 +402,20 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
         {/* Lista de Tareas */}
         <div className="flex-1 overflow-y-auto space-y-3 py-2">
            {initialSession.exercises.map((ex, i) => {
-             const isDone = completedExercises.has(ex.exerciseId)
+             const effectiveId = getEffectiveId(ex.exerciseId, ex.customName)
+             const isDone = completedExercises.has(effectiveId)
              // Si el ejercicio no está en el catálogo, crear uno fallback con el nombre disponible
-             const exerciseInfo = allExercises.find(e => e.id === ex.exerciseId) ?? {
+             const baseInfo = allExercises.find(e => e.id === ex.exerciseId) ?? {
                id: ex.exerciseId,
                name: getExerciseName(ex.exerciseId, ex.customName),
                muscleGroup: "Otro",
                isCustom: true,
+             }
+             // Siempre usar el ID efectivo y el nombre correcto (customName tiene prioridad)
+             const exerciseInfo = {
+               ...baseInfo,
+               id: effectiveId,
+               name: ex.customName || baseInfo.name,
              }
 
              return (

@@ -497,6 +497,13 @@ const rawItems = [
   { id: "arg103", name: "Cordero a la parrilla", portion: "100g", calories: 258, protein: 25, carbs: 0, fat: 17, category: "comida_arg" },
   { id: "arg104", name: "Cerdo agridulce con arroz", portion: "1 plato (300g)", calories: 480, protein: 22, carbs: 58, fat: 16, category: "comida_arg" },
   { id: "arg105", name: "Guiso de mondongo", portion: "1 plato (300g)", calories: 320, protein: 18, carbs: 28, fat: 14, category: "comida_arg" },
+  { id: "arg106", name: "Carne con papas al horno", portion: "1 porción (300g)", calories: 420, protein: 30, carbs: 28, fat: 18, category: "comida_arg" },
+  { id: "arg107", name: "Bife con papas al horno", portion: "1 porción (300g)", calories: 450, protein: 32, carbs: 28, fat: 20, category: "comida_arg" },
+  { id: "arg108", name: "Pollo con papas al horno", portion: "1 porción (300g)", calories: 390, protein: 30, carbs: 28, fat: 14, category: "comida_arg" },
+  { id: "arg109", name: "Carne con papas y cebolla al horno", portion: "1 porción (320g)", calories: 440, protein: 30, carbs: 32, fat: 18, category: "comida_arg" },
+  { id: "arg110", name: "Matambre con papas al horno", portion: "1 porción (300g)", calories: 460, protein: 34, carbs: 26, fat: 22, category: "comida_arg" },
+  { id: "arg111", name: "Papas al horno (sin carne)", portion: "1 porción (200g)", calories: 180, protein: 4, carbs: 38, fat: 3, category: "comida_arg" },
+  { id: "arg112", name: "Papas al horno con aceite", portion: "1 porción (200g)", calories: 240, protein: 4, carbs: 38, fat: 9, category: "comida_arg" },
 
   // ── PROTEÍNAS adicionales (p31-p55) ───────────────────────────────────────
   { id: "p31", name: "Proteína en polvo (caseína)", portion: "30g scoop", calories: 110, protein: 24, carbs: 4, fat: 0.5, category: "proteina" },

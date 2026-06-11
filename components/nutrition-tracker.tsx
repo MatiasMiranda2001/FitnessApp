@@ -367,12 +367,13 @@ export function NutritionTracker({ profile, foodEntries, onUpdate, scanTrigger }
                         
                         <div className="relative group mb-4">
                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
-                           <Input 
+                           <Input
                               className="pl-12 bg-secondary/50 border-none h-12"
-                              placeholder="Ej: Pollo, Helado, Arroz..." 
+                              placeholder="Ej: Pollo, Helado, Arroz..."
                               value={searchTerm}
                               onChange={(e) => setSearchTerm(e.target.value)}
                               autoFocus
+                              onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "start" }), 300)}
                            />
                         </div>
 
