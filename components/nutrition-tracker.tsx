@@ -354,29 +354,26 @@ export function NutritionTracker({ profile, foodEntries, onUpdate, scanTrigger }
                     <Search className="h-5 w-5" /> Buscar Comida
                  </Button>
               </SheetTrigger>
-              <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl p-0">
-                  <div className="h-full flex flex-col bg-background">
-                     <div className="px-6 pt-6 pb-2">
-                        <div className="w-12 h-1.5 bg-secondary rounded-full mx-auto mb-6" />
-                        <h2 className="text-2xl font-bold mb-4">Registrar Comida</h2>
+              <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl p-0 flex flex-col">
+                  <div className="flex flex-col h-full bg-background overflow-hidden">
+                     {/* Header sticky — siempre visible aunque suba el teclado */}
+                     <div className="shrink-0 px-6 pt-6 pb-2 bg-background z-10">
+                        <div className="w-12 h-1.5 bg-secondary rounded-full mx-auto mb-4" />
+                        <h2 className="text-2xl font-bold mb-3">Registrar Comida</h2>
                         {foodLimitError && (
-                          <div className="mb-4 p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-sm text-destructive">
+                          <div className="mb-3 p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-sm text-destructive">
                             🚫 {foodLimitError}
                           </div>
                         )}
-                        
-                        <div className="relative group mb-4">
+                        <div className="relative group mb-3">
                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
                            <Input
                               className="pl-12 bg-secondary/50 border-none h-12"
                               placeholder="Ej: Pollo, Helado, Arroz..."
                               value={searchTerm}
                               onChange={(e) => setSearchTerm(e.target.value)}
-                              autoFocus
-                              onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "start" }), 300)}
                            />
                         </div>
-
                         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                            <button onClick={() => setCategoryFilter(null)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${!categoryFilter ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground'}`}>Todos</button>
                            <button onClick={() => setCategoryFilter('comida_arg')} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${categoryFilter === 'comida_arg' ? 'bg-sky-600 text-white' : 'bg-secondary text-muted-foreground'}`}>🇦🇷 Argentina</button>
