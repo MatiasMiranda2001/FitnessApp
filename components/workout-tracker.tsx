@@ -282,6 +282,12 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
     )
   }
 
+  // Detecta si el ejercicio es unilateral para mostrar "kg/lado"
+  const UNILATERAL_KEYWORDS = ["unilateral", "un brazo", "un lado", "alternado", "single", "a un brazo", "por brazo", "por lado"]
+  const isUnilateral = selectedExercise
+    ? UNILATERAL_KEYWORDS.some(kw => selectedExercise.name.toLowerCase().includes(kw))
+    : false
+
   // --- MODO 1: DETALLE DE EJERCICIO (LOGGER) ---
   if (selectedExercise) {
     return (
@@ -304,7 +310,7 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
           </div>
         </div>
 
-        {previousBest && (<Card className="border-primary/20 bg-primary/5"><CardContent className="flex items-center gap-3 p-3"><div className="bg-primary/10 p-2 rounded-full"><TrendingUp className="h-5 w-5 text-primary" /></div><div><p className="text-xs font-medium text-muted-foreground uppercase">Tu Récord Global</p><p className="text-sm font-bold text-foreground">{previousBest.weight}kg <span className="font-normal text-muted-foreground">x {previousBest.reps} reps</span></p></div></CardContent></Card>)}
+        {previousBest && (<Card className="border-primary/20 bg-primary/5"><CardContent className="flex items-center gap-3 p-3"><div className="bg-primary/10 p-2 rounded-full"><TrendingUp className="h-5 w-5 text-primary" /></div><div><p className="text-xs font-medium text-muted-foreground uppercase">Tu Récord Global</p><p className="text-sm font-bold text-foreground">{previousBest.weight}{isUnilateral ? "kg/lado" : "kg"} <span className="font-normal text-muted-foreground">x {previousBest.reps} reps</span></p></div></CardContent></Card>)}
         {selectedExercise.videoPlaceholder && (<a href={selectedExercise.videoPlaceholder} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3 rounded-lg bg-secondary border border-border hover:bg-secondary/80 transition-colors"><div className="flex items-center gap-3"><Play className="h-4 w-4 text-red-500 fill-red-500" /><span className="text-sm font-medium">Ver técnica en YouTube</span></div><ChevronRight className="h-4 w-4 text-muted-foreground" /></a>)}
 
         <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
@@ -318,7 +324,20 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
              </div>
           </div>
           
-          <div className="mb-2 grid grid-cols-[0.5fr_1.5fr_1.5fr_1fr_0.5fr] text-center text-xs font-medium text-muted-foreground px-1"><span>#</span><span>Kilos</span><span>Reps</span><span>RPE</span><span></span></div>
+          <div className="mb-2 grid grid-cols-[0.5fr_1.5fr_1.5fr_1fr_0.5fr] text-center text-xs font-medium text-muted-foreground px-1">
+            <span>#</span>
+            <span>{isUnilateral ? "kg/lado" : "Kilos"}</span>
+            <span>Reps</span>
+            <span>RPE</span>
+            <span></span>
+          </div>
+          {isUnilateral && (
+            <div className="flex items-center gap-1.5 mb-2 px-1">
+              <span className="text-[10px] bg-primary/10 text-primary font-semibold px-2 py-0.5 rounded-full border border-primary/20">
+                ⚡ peso por lado — no total
+              </span>
+            </div>
+          )}
           {sets.map((set, i) => (
             <div key={i} className="mb-2 grid grid-cols-[0.5fr_1.5fr_1.5fr_1fr_0.5fr] items-center gap-2">
               <span className="text-center text-sm font-bold text-muted-foreground bg-secondary/50 rounded-full w-6 h-6 flex items-center justify-center">{i + 1}</span>

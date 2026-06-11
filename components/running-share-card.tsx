@@ -96,10 +96,11 @@ export function RunningShareCard({ open, onClose, log }: Props) {
       // Cargar html2canvas dinámicamente (no hace falta en SSR ni hasta que se use)
       const html2canvas = (await import("html2canvas")).default
       const canvas = await html2canvas(cardRef.current, {
-        scale: 2, // 2x para que se vea nítido en pantallas retina
+        scale: 3, // 3x para mejor calidad al compartir
         backgroundColor: null,
         logging: false,
         useCORS: true,
+        allowTaint: true,
       })
 
       const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, "image/png", 0.95))
@@ -182,29 +183,27 @@ export function RunningShareCard({ open, onClose, log }: Props) {
                 background: "linear-gradient(135deg, #4C1D95 0%, #6D28D9 30%, #7C3AED 60%, #A78BFA 100%)",
               }}
             >
-              {/* Blobs decorativos */}
+              {/* Blobs decorativos — sin blur para compatibilidad con html2canvas */}
               <div
                 style={{
                   position: "absolute",
-                  top: "-80px",
-                  right: "-60px",
-                  width: "240px",
-                  height: "240px",
+                  top: "-60px",
+                  right: "-50px",
+                  width: "200px",
+                  height: "200px",
                   borderRadius: "50%",
-                  background: "rgba(255,255,255,0.1)",
-                  filter: "blur(40px)",
+                  background: "rgba(255,255,255,0.07)",
                 }}
               />
               <div
                 style={{
                   position: "absolute",
-                  bottom: "-100px",
-                  left: "-50px",
-                  width: "220px",
-                  height: "220px",
+                  bottom: "-80px",
+                  left: "-40px",
+                  width: "180px",
+                  height: "180px",
                   borderRadius: "50%",
-                  background: "rgba(255,255,255,0.08)",
-                  filter: "blur(50px)",
+                  background: "rgba(255,255,255,0.05)",
                 }}
               />
 
@@ -256,9 +255,8 @@ export function RunningShareCard({ open, onClose, log }: Props) {
                   margin: "0 24px",
                   padding: "12px 8px",
                   borderRadius: "16px",
-                  background: "rgba(255,255,255,0.12)",
-                  backdropFilter: "blur(12px)",
-                  border: "1px solid rgba(255,255,255,0.18)",
+                  background: "rgba(255,255,255,0.15)",
+                  border: "1px solid rgba(255,255,255,0.22)",
                   display: "flex",
                   gap: "8px",
                 }}>
@@ -290,9 +288,8 @@ export function RunningShareCard({ open, onClose, log }: Props) {
                   margin: "18px 24px 0 24px",
                   padding: "16px",
                   borderRadius: "16px",
-                  background: "rgba(255,255,255,0.1)",
-                  backdropFilter: "blur(8px)",
-                  border: "1px solid rgba(255,255,255,0.15)",
+                  background: "rgba(255,255,255,0.12)",
+                  border: "1px solid rgba(255,255,255,0.18)",
                 }}>
                   <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", opacity: 0.7, marginBottom: "8px", textAlign: "center" }}>
                     RECORRIDO
