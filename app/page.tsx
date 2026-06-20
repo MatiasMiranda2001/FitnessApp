@@ -168,6 +168,69 @@ export default async function LandingPage() {
             title="Plantillas validadas"
             description="Empezá con rutinas full-body, push/pull/legs y upper/lower diseñadas con base científica."
           />
+          <FeatureCard
+            icon={<Zap className="h-5 w-5" />}
+            title="Análisis semanal IA · Pro"
+            description="Cada domingo recibís un email con tu score de la semana, progreso en el gym y un consejo concreto para la próxima."
+          />
+        </div>
+      </section>
+
+      {/* WEEKLY ANALYSIS HIGHLIGHT — Pro feature */}
+      <section className="px-6 py-16 max-w-5xl mx-auto">
+        <div className="rounded-3xl overflow-hidden border border-primary/20 shadow-xl shadow-primary/10">
+          <div className="grid md:grid-cols-2">
+            {/* Texto */}
+            <div className="p-10 flex flex-col justify-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-6 w-fit">
+                <Zap className="h-3 w-3" /> Solo en Pro
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">
+                Tu coach IA analiza tu semana completa
+              </h2>
+              <p className="text-muted-foreground leading-relaxed mb-6">
+                Cada domingo a las 20hs recibís un email con el cruce de tu nutrición y tus entrenamientos de la semana. Cuántas calorías promediaste, cuánto subiste en tus ejercicios y qué hacer diferente la próxima semana — todo en un solo análisis motivacional.
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                {["Score de la semana del 1 al 10", "Comparación de pesos vs semana anterior", "Adherencia calórica y proteica a tu objetivo", "Un tip concreto y accionable para mejorar"].map(item => (
+                  <li key={item} className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {/* Preview del email */}
+            <div className="bg-gradient-to-br from-primary/5 to-primary/10 p-8 flex items-center justify-center">
+              <div className="bg-white rounded-2xl shadow-lg p-6 max-w-xs w-full border border-border">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-sm">🏃</div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900">Rendi</p>
+                    <p className="text-[10px] text-gray-400">hola@rendi.com.ar</p>
+                  </div>
+                </div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Score de la semana</p>
+                <p className="text-4xl font-black text-primary mb-1">8<span className="text-lg text-gray-300">/10</span></p>
+                <p className="text-xs font-semibold text-green-600 mb-4">¡Semana excelente!</p>
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>🏋️ Entrenamientos</span><span className="font-bold text-gray-900">4 días</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>🍽️ Kcal promedio</span><span className="font-bold text-gray-900">2.150 kcal</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>📈 Mejor progreso</span><span className="font-bold text-green-600">+5 kg en Sentadilla</span>
+                  </div>
+                </div>
+                <div className="rounded-lg bg-primary p-3">
+                  <p className="text-[10px] font-bold text-white/70 uppercase mb-1">⚡ Tu foco esta semana</p>
+                  <p className="text-xs text-white font-medium">Agregá una porción de proteína al desayuno para llegar a tu meta diaria.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -245,6 +308,7 @@ export default async function LandingPage() {
               <PriceItem><strong>Registros de comida ilimitados</strong></PriceItem>
               <PriceItem><strong>AI Coach ilimitado</strong></PriceItem>
               <PriceItem>Historial completo y analíticas avanzadas</PriceItem>
+              <PriceItem><strong>Análisis semanal IA por email</strong> — nutrición + gym cruzados</PriceItem>
               <PriceItem>Soporte prioritario</PriceItem>
             </ul>
             <Link href="/signup" className="block mt-8">
@@ -265,6 +329,7 @@ export default async function LandingPage() {
             <ul className="mt-6 space-y-3 text-sm flex-1">
               <PriceItem>Todo lo del plan Pro mensual</PriceItem>
               <PriceItem><strong>16% de descuento</strong> sobre el mensual</PriceItem>
+              <PriceItem>Análisis semanal IA por email incluido</PriceItem>
               <PriceItem>Acceso garantizado por 12 meses</PriceItem>
               <PriceItem>Sin renovaciones automáticas</PriceItem>
             </ul>
