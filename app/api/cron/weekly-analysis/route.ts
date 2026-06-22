@@ -95,10 +95,10 @@ function buildEmailHtml(params: {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="vertical-align:middle;">
-                    <span style="font-size:28px;">🏃</span>
+                    <img src="https://www.rendi.com.ar/icon-192.png" width="40" height="40" alt="Rendi" style="border-radius:10px;display:block;" />
                   </td>
                   <td style="padding-left:12px;vertical-align:middle;">
-                    <p style="margin:0;font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;">Rendi</p>
+                    <p style="margin:0;font-size:22px;font-weight:900;color:#ffffff;letter-spacing:-0.03em;">Rendi</p>
                     <p style="margin:2px 0 0;font-size:11px;color:rgba(255,255,255,0.75);">Entrenamiento inteligente</p>
                   </td>
                   <td align="right" style="vertical-align:middle;">
@@ -341,8 +341,17 @@ export async function GET(req: NextRequest) {
         if (gain > topGainKg) { topGainKg = gain; topGainExId = exId }
       }
 
+      // Si el ID tiene __ (formato baseId__customSlug), usar la parte del customSlug
+      // Si no, usar el baseId. Convertir slug a nombre legible.
+      const rawExName = topGainExId.includes("__")
+        ? topGainExId.split("__")[1]   // "sentadillas-pendular"
+        : topGainExId.replace(/^custom-/, "")
+      const exDisplayName = rawExName
+        .replace(/-/g, " ")
+        .replace(/^\w/, c => c.toUpperCase())
+
       const topExerciseGain = topGainKg > 0
-        ? `Subiste ${topGainKg} kg en ${topGainExId.replace(/^custom-/, "").replace(/-/g, " ").replace(/^([\w])/, c => c.toUpperCase())} respecto a la semana pasada 💪`
+        ? `Subiste ${topGainKg} kg en ${exDisplayName} respecto a la semana pasada 💪`
         : null
 
       // ── Score sintético (0-10) ────────────────────────────────────────────
