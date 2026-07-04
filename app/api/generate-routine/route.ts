@@ -5,6 +5,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextResponse } from "next/server"
 import { getAuthedUserId } from "@/lib/limits"
 import { defaultExercises } from "@/lib/exercises"
+import { SECTION_ORDER, normalizeSection } from "@/lib/routine-sections"
+import type { RoutineSection } from "@/lib/types"
 
 interface GenerateRequest {
   goal: "bulk" | "cut" | "maintain"
@@ -147,7 +149,21 @@ REGLAS DE PROGRAMACIÓN:
   · Pérdida grasa (cut): "10-15" para mantener volumen
   · Resistencia/Mantener: "12-15"
 - RPE: 7 para principiante, 7-8 para intermedio, 8-9 para avanzado
-- Empezá cada día con ejercicios compuestos pesados, después accesorios
+
+ESTRUCTURA POR BLOQUES ("section") — cada ejercicio de cada día debe llevar un campo
+"section" con uno de estos 5 valores, EN ESTE ORDEN dentro del día:
+  1. "activacion"     → 0-1 ejercicio de movilidad/activación liviano antes de cargar peso
+                          (solo si tiene sentido; para rutinas cortas/principiante podés omitirlo).
+  2. "principal"       → 1-2 ejercicios compuestos pesados, el foco real de la sesión
+                          (sentadilla, press banca, peso muerto, dominadas, remo con barra, etc.).
+  3. "complementario"  → 1-2 ejercicios que refuerzan el mismo patrón/grupo del bloque principal
+                          con menos carga o en variante (ej. press inclinado tras press banca).
+  4. "accesorio"       → el resto: aislamiento y detalle muscular (elevaciones laterales, curl,
+                          extensiones, gemelos, core, etc.).
+  5. "cardio"          → 0-1 ejercicio de cardio SOLO si el objetivo es "cut" o el usuario no
+                          pidió enfoque de fuerza pura; para "bulk" normalmente omitilo.
+- Repartí el total de ejercicios de la sesión entre estos bloques respetando ese orden; no hace
+  falta usar los 5 bloques todos los días, pero "principal" y "accesorio" están casi siempre.
 
 DEVOLVÉ EXCLUSIVAMENTE UN JSON VÁLIDO con esta estructura exacta (sin markdown, sin texto extra antes ni después):
 
@@ -159,13 +175,17 @@ DEVOLVÉ EXCLUSIVAMENTE UN JSON VÁLIDO con esta estructura exacta (sin markdown
       "dayNumber": 1,
       "label": "Día 1 — [Tipo: Push / Pull / Legs / Upper / Lower / Full Body]",
       "exercises": [
-        { "exerciseId": "id-exacto-del-catalogo", "sets": 4, "reps": "8-12", "rpe": 7 }
+        { "exerciseId": "id-exacto-del-catalogo", "sets": 4, "reps": "8-12", "rpe": 7, "section": "principal" }
       ]
     }
   ]
 }
 
-IMPORTANTE: cada "exerciseId" debe ser uno de los IDs del catálogo de arriba, EXACTAMENTE como aparece.
+IMPORTANTE:
+- Cada "exerciseId" debe ser uno de los IDs del catálogo de arriba, EXACTAMENTE como aparece.
+- Cada ejercicio DEBE incluir "section" con uno de estos valores exactos: "activacion",
+  "principal", "complementario", "accesorio", "cardio".
+- Los ejercicios de cada día deben venir ordenados por bloque, en el orden de la lista de arriba.
 `.trim()
 
   // 7. Llamada a Gemini
@@ -198,7 +218,7 @@ IMPORTANTE: cada "exerciseId" debe ser uno de los IDs del catálogo de arriba, E
       days?: Array<{
         dayNumber?: number
         label?: string
-        exercises?: Array<{ exerciseId?: string; sets?: number; reps?: string; rpe?: number; weight?: number }>
+        exercises?: Array<{ exerciseId?: string; sets?: number; reps?: string; rpe?: number; weight?: number; section?: string }>
       }>
     }
     try {
@@ -218,6 +238,8 @@ IMPORTANTE: cada "exerciseId" debe ser uno de los IDs del catálogo de arriba, E
 
     const validIds = new Set(finalCatalog.map(e => e.id))
 
+    const sectionRank = (s: RoutineSection) => SECTION_ORDER.indexOf(s)
+
     const sanitizedDays = parsed.days
       .slice(0, frequency)
       .map((day, idx) => {
@@ -228,8 +250,11 @@ IMPORTANTE: cada "exerciseId" debe ser uno de los IDs del catálogo de arriba, E
             sets: Math.max(1, Math.min(10, Number(ex.sets) || 3)),
             reps: typeof ex.reps === "string" && ex.reps.trim() ? ex.reps.trim() : "8-12",
             rpe: ex.rpe !== undefined ? Math.max(1, Math.min(10, Number(ex.rpe))) : 7,
+            section: normalizeSection(ex.section),
             ...(ex.weight !== undefined ? { weight: Number(ex.weight) } : {}),
           }))
+          // Reordenamos por bloque por si Gemini no respetó el orden pedido.
+          .sort((a, b) => sectionRank(a.section) - sectionRank(b.section))
 
         return {
           dayNumber: idx + 1,

@@ -66,6 +66,10 @@ export interface FoodEntry {
 }
 
 // --- RUTINAS ---
+// Bloque/sección dentro de un día de rutina. Opcional para no romper rutinas
+// guardadas antes de este campo (se asume "principal" si no está definido).
+export type RoutineSection = "activacion" | "principal" | "complementario" | "accesorio" | "cardio"
+
 export interface RoutineExercise {
   exerciseId: string
   sets: number | string
@@ -73,6 +77,7 @@ export interface RoutineExercise {
   rpe?: number
   weight?: number      // Peso sugerido en kg (opcional)
   customName?: string  // Nombre custom para ejercicios no en el catálogo
+  section?: RoutineSection // Bloque del día: activación / principal / complementario / accesorio / cardio
 }
 
 export interface RoutineDay {

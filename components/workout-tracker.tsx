@@ -8,6 +8,7 @@ import { Search, Plus, ChevronRight, TrendingUp, Play, X, Check, ChevronLeft, Ca
 import type { Exercise, WorkoutLog, WorkoutSet, RoutineDay, RunningLog } from "@/lib/types"
 import { defaultExercises } from "@/lib/exercises"
 import { addWorkoutLog, addCustomExercise, loadData } from "@/lib/store"
+import { SECTION_META, groupBySection } from "@/lib/routine-sections"
 import { RunningTracker } from "@/components/running-tracker"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -419,48 +420,55 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
         <p className="text-xs text-muted-foreground text-right">{completedExercises.size} de {initialSession.exercises.length} completados</p>
 
         {/* Lista de Tareas */}
-        <div className="flex-1 overflow-y-auto space-y-3 py-2">
-           {initialSession.exercises.map((ex, i) => {
-             const effectiveId = getEffectiveId(ex.exerciseId, ex.customName)
-             const isDone = completedExercises.has(effectiveId)
-             // Si el ejercicio no está en el catálogo, crear uno fallback con el nombre disponible
-             const baseInfo = allExercises.find(e => e.id === ex.exerciseId) ?? {
-               id: ex.exerciseId,
-               name: getExerciseName(ex.exerciseId, ex.customName),
-               muscleGroup: "Otro",
-               isCustom: true,
-             }
-             // Siempre usar el ID efectivo y el nombre correcto (customName tiene prioridad)
-             const exerciseInfo = {
-               ...baseInfo,
-               id: effectiveId,
-               name: ex.customName || baseInfo.name,
-             }
+        <div className="flex-1 overflow-y-auto space-y-4 py-2">
+           {groupBySection(initialSession.exercises).map(({ section, entries }) => (
+             <div key={section} className="space-y-2">
+               <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1 pl-1">
+                 <span>{SECTION_META[section].emoji}</span> {SECTION_META[section].label}
+               </p>
+               {entries.map(({ item: ex, index: i }) => {
+                 const effectiveId = getEffectiveId(ex.exerciseId, ex.customName)
+                 const isDone = completedExercises.has(effectiveId)
+                 // Si el ejercicio no está en el catálogo, crear uno fallback con el nombre disponible
+                 const baseInfo = allExercises.find(e => e.id === ex.exerciseId) ?? {
+                   id: ex.exerciseId,
+                   name: getExerciseName(ex.exerciseId, ex.customName),
+                   muscleGroup: "Otro",
+                   isCustom: true,
+                 }
+                 // Siempre usar el ID efectivo y el nombre correcto (customName tiene prioridad)
+                 const exerciseInfo = {
+                   ...baseInfo,
+                   id: effectiveId,
+                   name: ex.customName || baseInfo.name,
+                 }
 
-             return (
-               <Card
-                  key={i}
-                  className={`border transition-all cursor-pointer ${isDone ? "bg-primary/5 border-primary/30" : "bg-card border-border hover:border-primary/50"}`}
-                  onClick={() => {
-                     setSelectedExercise(exerciseInfo)
-                     setSets([{ weight: 0, reps: 0, rpe: 7 }])
-                  }}
-               >
-                 <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                       <div className={`h-8 w-8 rounded-full flex items-center justify-center border-2 ${isDone ? "bg-primary text-primary-foreground border-primary" : "border-muted-foreground/30 text-muted-foreground"}`}>
-                          {isDone ? <Check className="h-5 w-5" /> : <span className="font-bold text-xs">{i + 1}</span>}
-                       </div>
-                       <div>
-                          <p className={`font-semibold ${isDone ? "text-primary" : "text-foreground"}`}>{exerciseInfo.name}</p>
-                          <p className="text-xs text-muted-foreground">{ex.sets} series x {ex.reps} reps</p>
-                       </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                 </CardContent>
-               </Card>
-             )
-           })}
+                 return (
+                   <Card
+                      key={i}
+                      className={`border transition-all cursor-pointer ${isDone ? "bg-primary/5 border-primary/30" : "bg-card border-border hover:border-primary/50"}`}
+                      onClick={() => {
+                         setSelectedExercise(exerciseInfo)
+                         setSets([{ weight: 0, reps: 0, rpe: 7 }])
+                      }}
+                   >
+                     <CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                           <div className={`h-8 w-8 rounded-full flex items-center justify-center border-2 ${isDone ? "bg-primary text-primary-foreground border-primary" : "border-muted-foreground/30 text-muted-foreground"}`}>
+                              {isDone ? <Check className="h-5 w-5" /> : <span className="font-bold text-xs">{i + 1}</span>}
+                           </div>
+                           <div>
+                              <p className={`font-semibold ${isDone ? "text-primary" : "text-foreground"}`}>{exerciseInfo.name}</p>
+                              <p className="text-xs text-muted-foreground">{ex.sets} series x {ex.reps} reps</p>
+                           </div>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                     </CardContent>
+                   </Card>
+                 )
+               })}
+             </div>
+           ))}
         </div>
 
         {/* Footer */}

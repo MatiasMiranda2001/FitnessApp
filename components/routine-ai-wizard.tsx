@@ -15,6 +15,7 @@ import {
 import type { UserProfile, WeeklyRoutine, WorkoutLog, RoutineDay, Goal } from "@/lib/types"
 import { defaultExercises } from "@/lib/exercises"
 import { saveRoutine, setActiveRoutine, loadData } from "@/lib/store"
+import { SECTION_META, groupBySection } from "@/lib/routine-sections"
 
 interface Props {
   open: boolean
@@ -392,18 +393,27 @@ export function RoutineAiWizard({ open, onClose, onCreated, profile, workoutLogs
                       {day.exercises.length} ejercicios
                     </span>
                   </div>
-                  <ul className="space-y-1 pl-8">
-                    {day.exercises.map((ex, i) => (
-                      <li key={i} className="text-xs flex items-center justify-between">
-                        <span className="text-foreground/90 truncate">
-                          {exerciseMap[ex.exerciseId] || ex.exerciseId}
-                        </span>
-                        <span className="text-muted-foreground shrink-0 ml-2 tabular-nums">
-                          {ex.sets} × {ex.reps}
-                        </span>
-                      </li>
+                  <div className="pl-8 space-y-2">
+                    {groupBySection(day.exercises).map(({ section, entries }) => (
+                      <div key={section}>
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/70 mb-0.5">
+                          {SECTION_META[section].emoji} {SECTION_META[section].label}
+                        </p>
+                        <ul className="space-y-1">
+                          {entries.map(({ item: ex, index: i }) => (
+                            <li key={i} className="text-xs flex items-center justify-between">
+                              <span className="text-foreground/90 truncate">
+                                {exerciseMap[ex.exerciseId] || ex.exerciseId}
+                              </span>
+                              <span className="text-muted-foreground shrink-0 ml-2 tabular-nums">
+                                {ex.sets} × {ex.reps}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               ))}
             </div>
