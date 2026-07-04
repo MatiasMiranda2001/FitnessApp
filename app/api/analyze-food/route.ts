@@ -19,8 +19,9 @@ async function callGemini(apiKey: string, base64Image: string, mimeType: string)
   const genAI = new GoogleGenerativeAI(apiKey)
   const model = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" })
   const prompt = `
-    Actúa como nutricionista experto en identificar productos alimenticios envasados de marca,
-    además de comida casera/preparada. Analiza esta foto siguiendo estos pasos:
+    Actúa como nutricionista experto, meticuloso con los números, especializado tanto en
+    productos envasados de marca como en comida casera/de restaurante. Analiza esta foto
+    siguiendo estos pasos, EN ORDEN, sin saltear ninguno:
 
     1. IDENTIFICÁ QUÉ HAY EN LA FOTO:
        - Si es un producto envasado (paquete, caja, botella, wrapper), fijate si se ve el logo,
@@ -29,24 +30,42 @@ async function callGemini(apiKey: string, base64Image: string, mimeType: string)
          Usá ese reconocimiento visual de marca aunque el texto esté parcialmente tapado o borroso.
        - Si en la foto se ve la tabla nutricional impresa en el paquete (valores por porción o
          por 100g) y es legible, PRIORIZÁ esos valores exactos por sobre cualquier estimación tuya.
-       - Si es comida sin envase (plato casero, fruta, etc.), identificá los ingredientes y
-         estimá la porción visible.
+       - Si es comida sin envase (plato casero, de restaurante, pizzería, rotisería, etc.),
+         DESCOMPONÉ el plato en TODOS sus componentes visibles por separado antes de calcular
+         nada (ej. en una pizza con jamón: masa, salsa de tomate, muzzarella/queso, jamón;
+         en una milanesa: carne, pan rallado/rebozado, aceite de fritura; en una ensalada:
+         cada vegetal + aderezo). NO analices el plato como una unidad genérica ("pizza" o
+         "milanesa") sin contar sus componentes, porque eso subestima proteína y grasa.
 
-    2. ESTIMÁ LA CANTIDAD REAL VISIBLE en la foto (ej: "3 galletitas", "1 paquete completo",
-       "200ml", "1 plato"), no asumas una porción estándar si en la imagen se ve una cantidad
-       distinta.
+    2. ESTIMÁ LA CANTIDAD de cada componente por separado, en gramos o unidades, en base a lo
+       que se ve realmente en la foto (tamaño de la porción, cantidad de porciones/unidades,
+       grosor de la capa de queso o fiambre, etc.). No asumas una porción "estándar" chica si
+       en la imagen se ve claramente más cantidad — por ejemplo, si hay 3 porciones de pizza,
+       calculá 3 porciones completas, no 1.
 
-    3. CALCULÁ los macros para ESA cantidad específica:
-       - Si reconociste la marca y el producto exacto, usá los valores nutricionales reales
-         conocidos de ese producto (los que figuran en su etiquetado oficial), ajustados a la
-         cantidad visible.
-       - Si no pudiste identificar la marca con certeza, estimá de forma conservadora basándote
-         en productos similares de esa categoría.
+    3. CALCULÁ los macros de CADA componente usando valores nutricionales reales de referencia
+       (por 100g) y sumalos, prestando especial atención a los componentes que aportan más
+       proteína y grasa y que se subestiman fácil a simple vista:
+       - Quesos (muzzarella, cheddar, etc.): ricos en proteína y grasa, no solo en calorías.
+       - Fiambres y carnes (jamón, panceta, pollo, carne vacuna): aportan proteína significativa
+         incluso en porciones chicas.
+       - Rebozados y frituras: suman grasa extra por el aceite de cocción, no solo carbohidratos.
+       - Salsas, aderezos y cremas: suman grasa que se nota poco a simple vista.
+       Si reconociste una marca y el producto exacto, usá los valores nutricionales reales
+       conocidos de ese producto (los que figuran en su etiquetado oficial), ajustados a la
+       cantidad visible, en vez de estimar desde cero.
+
+    4. HACÉ UN CHEQUEO DE COHERENCIA antes de responder: para platos con queso, carne o fiambre,
+       la proteína total no debería quedar desproporcionadamente baja respecto a las calorías
+       totales (una regla general: en comidas con queso/carne/fiambre visibles, la proteína
+       suele representar entre el 15% y el 30% de las calorías totales). Si tu estimación queda
+       muy por debajo de eso, revisá si subestimaste alguno de los componentes y corregí antes
+       de responder.
 
     Devuelve SOLO un JSON válido (sin markdown, sin explicaciones, sin texto extra) con este
     formato exacto:
     {
-      "food_name": "Marca + producto + cantidad, ej: Oreo Original (3 galletitas)",
+      "food_name": "Nombre descriptivo con marca/cantidad si aplica, ej: Oreo Original (3 galletitas) o Pizza con jamón (3 porciones)",
       "calories": 100,
       "protein": 10,
       "carbs": 10,
