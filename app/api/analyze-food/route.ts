@@ -19,10 +19,34 @@ async function callGemini(apiKey: string, base64Image: string, mimeType: string)
   const genAI = new GoogleGenerativeAI(apiKey)
   const model = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" })
   const prompt = `
-    Actúa como nutricionista. Analiza esta foto.
-    Devuelve SOLO un JSON válido (sin markdown, sin explicaciones) con este formato exacto:
+    Actúa como nutricionista experto en identificar productos alimenticios envasados de marca,
+    además de comida casera/preparada. Analiza esta foto siguiendo estos pasos:
+
+    1. IDENTIFICÁ QUÉ HAY EN LA FOTO:
+       - Si es un producto envasado (paquete, caja, botella, wrapper), fijate si se ve el logo,
+         la marca, el nombre del producto, colores y tipografía característicos del packaging
+         (ej: "Oreo", "Granix", "Terrabusi", "Bagley", "Coca-Cola", "La Serenísima", etc.).
+         Usá ese reconocimiento visual de marca aunque el texto esté parcialmente tapado o borroso.
+       - Si en la foto se ve la tabla nutricional impresa en el paquete (valores por porción o
+         por 100g) y es legible, PRIORIZÁ esos valores exactos por sobre cualquier estimación tuya.
+       - Si es comida sin envase (plato casero, fruta, etc.), identificá los ingredientes y
+         estimá la porción visible.
+
+    2. ESTIMÁ LA CANTIDAD REAL VISIBLE en la foto (ej: "3 galletitas", "1 paquete completo",
+       "200ml", "1 plato"), no asumas una porción estándar si en la imagen se ve una cantidad
+       distinta.
+
+    3. CALCULÁ los macros para ESA cantidad específica:
+       - Si reconociste la marca y el producto exacto, usá los valores nutricionales reales
+         conocidos de ese producto (los que figuran en su etiquetado oficial), ajustados a la
+         cantidad visible.
+       - Si no pudiste identificar la marca con certeza, estimá de forma conservadora basándote
+         en productos similares de esa categoría.
+
+    Devuelve SOLO un JSON válido (sin markdown, sin explicaciones, sin texto extra) con este
+    formato exacto:
     {
-      "food_name": "Nombre corto",
+      "food_name": "Marca + producto + cantidad, ej: Oreo Original (3 galletitas)",
       "calories": 100,
       "protein": 10,
       "carbs": 10,
