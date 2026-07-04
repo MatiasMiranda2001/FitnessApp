@@ -9,6 +9,8 @@ import type { Exercise, WorkoutLog, WorkoutSet, RoutineDay, RunningLog } from "@
 import { defaultExercises } from "@/lib/exercises"
 import { addWorkoutLog, addCustomExercise, loadData } from "@/lib/store"
 import { SECTION_META, groupBySection } from "@/lib/routine-sections"
+import { WodTimer } from "@/components/wod-timer"
+import { formatWodSummary } from "@/lib/wod"
 import { RunningTracker } from "@/components/running-tracker"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -52,6 +54,7 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null)
   const [sets, setSets] = useState<WorkoutSet[]>([{ weight: 0, reps: 0, rpe: 7 }])
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(new Set())
+  const [wodTimerOpen, setWodTimerOpen] = useState(false)
 
   // Estados Custom
   const [search, setSearch] = useState("")
@@ -394,8 +397,9 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
 
   // --- MODO 2: SESIÓN DE ENTRENAMIENTO (HUB) ---
   if (initialSession) {
-    const progress = (completedExercises.size / initialSession.exercises.length) * 100
-    
+    const hasExercises = initialSession.exercises.length > 0
+    const progress = hasExercises ? (completedExercises.size / initialSession.exercises.length) * 100 : 0
+
     return (
       <div className="flex flex-col gap-4 px-4 pb-24 pt-6 h-screen flex flex-col">
         {/* Header de Sesión */}
@@ -413,11 +417,30 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
            <Button variant="ghost" size="icon" onClick={handleFinishSession}><X className="h-6 w-6" /></Button>
         </div>
 
-        {/* Barra de Progreso */}
-        <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-           <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
-        </div>
-        <p className="text-xs text-muted-foreground text-right">{completedExercises.size} de {initialSession.exercises.length} completados</p>
+        {/* Card de WOD, si el día tiene uno */}
+        {initialSession.wod && (
+          <button
+            onClick={() => setWodTimerOpen(true)}
+            className="w-full flex items-center justify-between rounded-2xl px-4 py-3 text-left text-white shadow-lg active:scale-[0.98] transition-transform"
+            style={{ background: "linear-gradient(135deg, #B45309 0%, #D97706 50%, #F59E0B 100%)" }}
+          >
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-white/80">🔥 WOD del día</p>
+              <p className="text-base font-extrabold">{formatWodSummary(initialSession.wod)}</p>
+            </div>
+            <span className="text-xs font-bold bg-white/20 px-3 py-1.5 rounded-lg">Iniciar</span>
+          </button>
+        )}
+
+        {hasExercises && (
+          <>
+            {/* Barra de Progreso */}
+            <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+               <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
+            </div>
+            <p className="text-xs text-muted-foreground text-right">{completedExercises.size} de {initialSession.exercises.length} completados</p>
+          </>
+        )}
 
         {/* Lista de Tareas */}
         <div className="flex-1 overflow-y-auto space-y-4 py-2">
@@ -477,6 +500,16 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
               <Flag className="mr-2 h-5 w-5" /> Finalizar Entrenamiento
            </Button>
         </div>
+
+        {/* Cronómetro interactivo del WOD */}
+        {initialSession.wod && (
+          <WodTimer
+            open={wodTimerOpen}
+            onClose={() => setWodTimerOpen(false)}
+            wod={initialSession.wod}
+            label={initialSession.label}
+          />
+        )}
       </div>
     )
   }

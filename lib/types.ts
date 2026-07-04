@@ -80,10 +80,30 @@ export interface RoutineExercise {
   section?: RoutineSection // Bloque del día: activación / principal / complementario / accesorio / cardio
 }
 
+// --- WOD (CrossFit-style: AMRAP / EMOM / For Time) ---
+export type WodFormat = "amrap" | "emom" | "for_time"
+
+export interface WodMovement {
+  id: string
+  name: string   // ej: "Burpees", "Wall Balls 9kg", "Run 400m"
+  reps: string   // texto libre: "15", "21-15-9", "400m", "Max reps"
+}
+
+export interface WodBlock {
+  format: WodFormat
+  timeCapMin?: number       // AMRAP / For Time: minutos totales (cap)
+  rounds?: number           // For Time: cantidad de rondas fijas (opcional, ej "5 rondas por tiempo")
+  emomIntervalSec?: number  // EMOM: segundos por intervalo (normalmente 60)
+  emomRounds?: number       // EMOM: cantidad de intervalos totales
+  movements: WodMovement[]
+  notes?: string
+}
+
 export interface RoutineDay {
   dayNumber: number
   label: string
   exercises: RoutineExercise[]
+  wod?: WodBlock // Bloque estilo CrossFit opcional, además o en lugar de los ejercicios tradicionales
 }
 
 export interface WeeklyRoutine {
