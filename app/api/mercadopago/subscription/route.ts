@@ -4,8 +4,8 @@ import { NextResponse } from "next/server"
 import { PreApproval } from "mercadopago"
 import {
   mpClient,
-  MP_PLAN_ID_MONTHLY,
-  MP_PLAN_ID_ANNUAL,
+  MP_PRICE_ARS,
+  MP_PRICE_ANNUAL_ARS,
   APP_URL,
   type MpPlan,
 } from "@/lib/mercadopago/server"
@@ -47,25 +47,26 @@ export async function POST(req: Request) {
     }
 
     const isAnnual = plan === "annual"
-    const planId = isAnnual ? MP_PLAN_ID_ANNUAL : MP_PLAN_ID_MONTHLY
+    const amount = isAnnual ? MP_PRICE_ANNUAL_ARS : MP_PRICE_ARS
 
-    if (!planId) {
-      console.error(
-        `[mp/subscription] Falta MP_PLAN_ID_${isAnnual ? "ANNUAL" : "MONTHLY"}. ` +
-        "Corré /api/mercadopago/setup-plans?create=true una vez y cargá los IDs en las env vars."
-      )
-      return NextResponse.json(
-        { error: "La suscripción no está configurada todavía. Probá de nuevo en unos minutos." },
-        { status: 500 }
-      )
-    }
-
-    // Preapproval vinculado a un plan: precio y frecuencia ya están definidos en
-    // el plan, así que NO mandamos payer_email — Mercado Pago deja que cualquiera
-    // complete el pago con su propia cuenta, sin exigir que coincida con ningún email.
+    // Suscripción SIN plan asociado (modelo "pago pendiente" de Mercado Pago):
+    // devuelve un init_point al checkout hosteado donde el comprador elige su
+    // método de pago (tarjeta o dinero en cuenta). NOTA: no usar preapproval_plan_id
+    // acá — las suscripciones con plan asociado exigen card_token_id (tokenización
+    // propia de tarjeta), y rompen el flujo de redirección.
     const preapproval = await new PreApproval(mpClient).create({
       body: {
-        preapproval_plan_id: planId,
+        reason: isAnnual ? "Rendi - Plan Pro Anual" : "Rendi - Plan Pro Mensual",
+        auto_recurring: {
+          // Anual: cobro cada 12 meses. Mensual: cada 1 mes.
+          frequency: isAnnual ? 12 : 1,
+          frequency_type: "months",
+          transaction_amount: amount,
+          currency_id: "ARS",
+        },
+        // payer_email es obligatorio en este modelo. Implica que el comprador debe
+        // pagar logueado en MP con este mismo email (limitación de Checkout Pro).
+        payer_email: user.email ?? undefined,
         back_url: `${APP_URL}/billing?mp_success=1&plan=${plan}`,
         // notification_url: le dice a MP dónde mandar los webhooks de esta suscripción
         notification_url: `${APP_URL}/api/mercadopago/webhook`,
