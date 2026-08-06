@@ -4,8 +4,8 @@ import { NextResponse } from "next/server"
 import { PreApproval } from "mercadopago"
 import {
   mpClient,
-  MP_PRICE_ARS,
-  MP_PRICE_ANNUAL_ARS,
+  MP_PLAN_ID_MONTHLY,
+  MP_PLAN_ID_ANNUAL,
   APP_URL,
   type MpPlan,
 } from "@/lib/mercadopago/server"
@@ -47,23 +47,25 @@ export async function POST(req: Request) {
     }
 
     const isAnnual = plan === "annual"
-    const amount = isAnnual ? MP_PRICE_ANNUAL_ARS : MP_PRICE_ARS
+    const planId = isAnnual ? MP_PLAN_ID_ANNUAL : MP_PLAN_ID_MONTHLY
 
+    if (!planId) {
+      console.error(
+        `[mp/subscription] Falta MP_PLAN_ID_${isAnnual ? "ANNUAL" : "MONTHLY"}. ` +
+        "Corré /api/mercadopago/setup-plans?create=true una vez y cargá los IDs en las env vars."
+      )
+      return NextResponse.json(
+        { error: "La suscripción no está configurada todavía. Probá de nuevo en unos minutos." },
+        { status: 500 }
+      )
+    }
+
+    // Preapproval vinculado a un plan: precio y frecuencia ya están definidos en
+    // el plan, así que NO mandamos payer_email — Mercado Pago deja que cualquiera
+    // complete el pago con su propia cuenta, sin exigir que coincida con ningún email.
     const preapproval = await new PreApproval(mpClient).create({
       body: {
-        reason: isAnnual ? "Rendi - Plan Pro Anual" : "Rendi - Plan Pro Mensual",
-        auto_recurring: {
-          // Anual: cobro cada 12 meses. Mensual: cada 1 mes.
-          frequency: isAnnual ? 12 : 1,
-          frequency_type: "months",
-          transaction_amount: amount,
-          currency_id: "ARS",
-        },
-        // payer_email es obligatorio para crear un preapproval "suelto" (sin plan
-        // asociado) — la API de Mercado Pago lo rechaza si falta. Por eso lo dejamos,
-        // aunque tiene la contra de que el comprador tiene que pagar logueado en MP
-        // con ese mismo email (ver nota más abajo sobre alternativa con planes).
-        payer_email: user.email ?? undefined,
+        preapproval_plan_id: planId,
         back_url: `${APP_URL}/billing?mp_success=1&plan=${plan}`,
         // notification_url: le dice a MP dónde mandar los webhooks de esta suscripción
         notification_url: `${APP_URL}/api/mercadopago/webhook`,
