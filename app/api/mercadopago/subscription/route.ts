@@ -59,11 +59,11 @@ export async function POST(req: Request) {
           transaction_amount: amount,
           currency_id: "ARS",
         },
-        // Sin payer_email: si lo mandamos, Mercado Pago exige que el comprador esté
-        // logueado con esa misma cuenta/email exacto, y rechaza el pago si no coincide
-        // ("Tu e-mail no coincide con el de la suscripción"). Como el email de Rendi
-        // no siempre es el mismo que el de la cuenta de Mercado Pago del usuario,
-        // lo dejamos libre para que cualquiera pueda completar el pago.
+        // payer_email es obligatorio para crear un preapproval "suelto" (sin plan
+        // asociado) — la API de Mercado Pago lo rechaza si falta. Por eso lo dejamos,
+        // aunque tiene la contra de que el comprador tiene que pagar logueado en MP
+        // con ese mismo email (ver nota más abajo sobre alternativa con planes).
+        payer_email: user.email ?? undefined,
         back_url: `${APP_URL}/billing?mp_success=1&plan=${plan}`,
         // notification_url: le dice a MP dónde mandar los webhooks de esta suscripción
         notification_url: `${APP_URL}/api/mercadopago/webhook`,
