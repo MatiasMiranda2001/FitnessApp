@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, Check, Loader2, Sparkles, Crown } from "lucide-react"
+import { ChevronLeft, Check, Loader2, Sparkles, Crown, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useSupabase } from "@/lib/supabase/provider"
 import { useAppData } from "@/lib/hooks/use-store"
 import { refreshBilling } from "@/lib/store"
@@ -35,6 +37,12 @@ function BillingContent() {
   const data = useAppData()
   const [loading, setLoading] = useState<MpPlan | null>(null)
   const [banner, setBanner] = useState<{ msg: string; type: "success" | "error" | "neutral" } | null>(null)
+  // Modal previo al pago: pregunta con qué email de Mercado Pago va a pagar.
+  // MP exige que el comprador esté logueado con ese email exacto, y no siempre
+  // coincide con el email de la cuenta de Rendi.
+  const [emailDialogPlan, setEmailDialogPlan] = useState<MpPlan | null>(null)
+  const [payerEmail, setPayerEmail] = useState("")
+  const [emailError, setEmailError] = useState<string | null>(null)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -58,19 +66,43 @@ function BillingContent() {
   const billing = data.billing
   const isPro = billing.plan === "pro"
 
-  async function handleMPCheckout(plan: MpPlan) {
-    setLoading(plan)
+  // Paso 1: abrir el modal que pregunta el email de Mercado Pago,
+  // pre-cargado con el email de la cuenta de Rendi (el caso más común).
+  function handleMPCheckout(plan: MpPlan) {
     setBanner(null)
+    setEmailError(null)
+    setPayerEmail(user?.email ?? "")
+    setEmailDialogPlan(plan)
+  }
+
+  // Paso 2: con el email confirmado, crear la suscripción y redirigir a MP.
+  async function handleConfirmCheckout() {
+    const plan = emailDialogPlan
+    if (!plan) return
+
+    const email = payerEmail.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError("Ingresá un email válido.")
+      return
+    }
+
+    setEmailError(null)
+    setLoading(plan)
     try {
       const res = await fetch("/api/mercadopago/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, payerEmail: email }),
       })
       const json = await res.json()
-      if (json.url) window.location.href = json.url
-      else setBanner({ msg: json.error || "No se pudo abrir Mercado Pago. Intentá de nuevo.", type: "error" })
+      if (json.url) {
+        window.location.href = json.url
+      } else {
+        setEmailDialogPlan(null)
+        setBanner({ msg: json.error || "No se pudo abrir Mercado Pago. Intentá de nuevo.", type: "error" })
+      }
     } catch {
+      setEmailDialogPlan(null)
       setBanner({ msg: "Error de red. Verificá tu conexión e intentá de nuevo.", type: "error" })
     } finally {
       setLoading(null)
@@ -244,6 +276,68 @@ function BillingContent() {
           </Card>
         )}
       </div>
+
+      {/* ── Modal: email de Mercado Pago antes de pagar ── */}
+      <Dialog open={emailDialogPlan !== null} onOpenChange={(o) => { if (!o && loading === null) setEmailDialogPlan(null) }}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="inline-block w-5 h-5 rounded-full bg-[#009EE3] shrink-0" />
+              Un último paso
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              ¿Con qué email usás <strong className="text-foreground">Mercado Pago</strong>?
+              Necesitás pagar con la cuenta de ese email.
+            </p>
+
+            <div className="space-y-1.5">
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  placeholder="tu-email@ejemplo.com"
+                  className="pl-10 h-12 rounded-xl"
+                  value={payerEmail}
+                  onChange={(e) => { setPayerEmail(e.target.value); setEmailError(null) }}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleConfirmCheckout() }}
+                  disabled={loading !== null}
+                />
+              </div>
+              {emailError && <p className="text-xs text-destructive pl-1">{emailError}</p>}
+              <p className="text-[11px] text-muted-foreground pl-1">
+                Si no coincide con el de tu cuenta de Mercado Pago, el pago va a ser rechazado.
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <Button
+                variant="outline"
+                className="flex-1 h-11 rounded-xl"
+                onClick={() => setEmailDialogPlan(null)}
+                disabled={loading !== null}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1 h-11 rounded-xl font-semibold bg-[#009EE3] hover:bg-[#0087c4] text-white"
+                onClick={handleConfirmCheckout}
+                disabled={loading !== null || !payerEmail.trim()}
+              >
+                {loading !== null ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Continuar al pago"
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }

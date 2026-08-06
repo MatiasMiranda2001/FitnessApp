@@ -23,11 +23,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 })
     }
 
-    // Body opcional: { plan: "monthly" | "annual" }
+    // Body opcional: { plan: "monthly" | "annual", payerEmail?: string }
+    // payerEmail: email de la cuenta de Mercado Pago con la que el usuario va a
+    // pagar. Puede diferir del email de su cuenta de Rendi — MP exige que el
+    // pagador esté logueado con ese email exacto, así que dejamos que lo elija.
     let plan: MpPlan = "monthly"
+    let payerEmail: string | undefined
     try {
       const body = await req.json()
       if (body?.plan === "annual" || body?.plan === "monthly") plan = body.plan
+      if (typeof body?.payerEmail === "string") {
+        const candidate = body.payerEmail.trim().toLowerCase()
+        // Validación simple de formato de email
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) payerEmail = candidate
+      }
     } catch {
       // Sin body → default monthly
     }
@@ -64,9 +73,10 @@ export async function POST(req: Request) {
           transaction_amount: amount,
           currency_id: "ARS",
         },
-        // payer_email es obligatorio en este modelo. Implica que el comprador debe
-        // pagar logueado en MP con este mismo email (limitación de Checkout Pro).
-        payer_email: user.email ?? undefined,
+        // payer_email es obligatorio en este modelo (Checkout Pro exige que el
+        // comprador pague logueado en MP con este email exacto). Usamos el que el
+        // usuario eligió en el formulario; fallback: el email de su cuenta de Rendi.
+        payer_email: payerEmail ?? user.email ?? undefined,
         back_url: `${APP_URL}/billing?mp_success=1&plan=${plan}`,
         // notification_url: le dice a MP dónde mandar los webhooks de esta suscripción
         notification_url: `${APP_URL}/api/mercadopago/webhook`,
