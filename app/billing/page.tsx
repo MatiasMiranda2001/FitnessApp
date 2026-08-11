@@ -45,11 +45,24 @@ function BillingContent() {
   const [emailError, setEmailError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Reconciliación activa: le preguntamos directo a Mercado Pago por la
+    // suscripción del usuario y actualizamos el perfil. Es la red de seguridad
+    // para cuando el webhook de MP no llega (se pierde, redirección, etc.).
+    const reconcile = () =>
+      fetch("/api/mercadopago/reconcile", { method: "POST" })
+        .then(() => refreshBilling())
+        .catch(() => {})
+
+    reconcile() // siempre al entrar a la pantalla
+
     const params = new URLSearchParams(window.location.search)
     if (params.get("mp_success") === "1") {
-      setBanner({ msg: "¡Pago iniciado con Mercado Pago! Tu plan se activará en segundos 🎉", type: "success" })
+      setBanner({
+        msg: "¡Pago realizado! Ya podés volver a la app: tu plan Pro se activa automáticamente en unos segundos. No hace falta que vuelvas a iniciar sesión acá 🎉",
+        type: "success",
+      })
       const delays = [3000, 6000, 10000, 15000, 25000]
-      delays.forEach(ms => setTimeout(() => refreshBilling(), ms))
+      delays.forEach(ms => setTimeout(reconcile, ms))
     } else if (params.get("canceled") === "1") {
       setBanner({ msg: "Compra cancelada. Podés intentar de nuevo cuando quieras.", type: "neutral" })
     }

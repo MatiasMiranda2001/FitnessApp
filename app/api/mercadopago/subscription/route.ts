@@ -9,7 +9,7 @@ import {
   APP_URL,
   type MpPlan,
 } from "@/lib/mercadopago/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createServiceClient } from "@/lib/supabase/server"
 
 export async function POST(req: Request) {
   try {
@@ -87,6 +87,26 @@ export async function POST(req: Request) {
 
     if (!preapproval.init_point) {
       return NextResponse.json({ error: "No se pudo crear el link de pago" }, { status: 500 })
+    }
+
+    // Guardamos el ID de la suscripción recién creada en el perfil (estado
+    // "pending" hasta que se pague). Así /api/mercadopago/reconcile puede
+    // consultarla directo aunque el webhook de MP nunca llegue.
+    if (preapproval.id) {
+      try {
+        const svc = createServiceClient()
+        await svc
+          .from("profiles")
+          .update({
+            mp_preapproval_id: preapproval.id,
+            mp_subscription_status: preapproval.status ?? "pending",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", user.id)
+      } catch (e) {
+        // No bloquea el pago — la reconciliación por external_reference lo cubre
+        console.warn("[mp/subscription] no se pudo guardar preapproval_id:", e)
+      }
     }
 
     return NextResponse.json({ url: preapproval.init_point, plan })
