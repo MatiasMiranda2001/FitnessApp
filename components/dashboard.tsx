@@ -335,7 +335,9 @@ function buildRecentActivity(foods: FoodEntry[], workouts: WorkoutLog[]): Activi
       type: "workout",
       emoji: "💪",
       title: "Entrenamiento",
-      subtitle: `${w.sets.length} ${w.sets.length === 1 ? "serie" : "series"}`,
+      subtitle: w.sets[0]?.durationMin
+        ? `${w.sets.reduce((acc, s) => acc + (s.durationMin ?? 0), 0)} min`
+        : `${w.sets.length} ${w.sets.length === 1 ? "serie" : "series"}`,
       date: w.date,
     })),
   ]

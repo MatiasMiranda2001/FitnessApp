@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Search, Plus, ChevronRight, TrendingUp, Play, X, Check, ChevronLeft, CalendarClock, Dumbbell, Flag, Timer, Hourglass, PersonStanding } from "lucide-react"
 import type { Exercise, WorkoutLog, WorkoutSet, RoutineDay, RunningLog } from "@/lib/types"
-import { defaultExercises } from "@/lib/exercises"
+import { defaultExercises, isCardioExercise, getCardioMinutes } from "@/lib/exercises"
 import { addWorkoutLog, addCustomExercise, loadData } from "@/lib/store"
 import { SECTION_META, groupBySection } from "@/lib/routine-sections"
 import { WodTimer } from "@/components/wod-timer"
@@ -199,6 +199,15 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
     return workoutLogs.filter(l => l.exerciseId === selectedExercise.id).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }, [workoutLogs, selectedExercise])
 
+  // Cardio se registra en minutos (una sola entrada), no en kg × reps
+  const isCardio = !!selectedExercise && isCardioExercise(selectedExercise.muscleGroup)
+
+  const previousBestMinutes = useMemo(() => {
+    const all = exerciseHistory.flatMap(l => l.sets.map(s => s.durationMin ?? 0))
+    const best = Math.max(0, ...all)
+    return best > 0 ? best : null
+  }, [exerciseHistory])
+
   const previousBest = useMemo(() => {
     if (exerciseHistory.length === 0) return null
     let bestWeight = 0; let bestReps = 0
@@ -219,8 +228,10 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
 
   function handleLogWorkout() {
     if (!selectedExercise) return
-    const validSets = sets.filter((s) => s.weight > 0 && s.reps > 0)
-    
+    const validSets: WorkoutSet[] = isCardio
+      ? sets.filter((s) => (s.durationMin ?? 0) > 0).slice(0, 1).map((s) => ({ weight: 0, reps: 0, durationMin: s.durationMin }))
+      : sets.filter((s) => s.weight > 0 && s.reps > 0)
+
     if (validSets.length > 0) {
         addWorkoutLog({ id: Date.now().toString(), exerciseId: selectedExercise.id, date: (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}` })(), sets: validSets })
     }
@@ -314,20 +325,29 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
           </div>
         </div>
 
-        {previousBest && (<Card className="border-primary/20 bg-primary/5"><CardContent className="flex items-center gap-3 p-3"><div className="bg-primary/10 p-2 rounded-full"><TrendingUp className="h-5 w-5 text-primary" /></div><div><p className="text-xs font-medium text-muted-foreground uppercase">Tu Récord Global</p><p className="text-sm font-bold text-foreground">{previousBest.weight}{isUnilateral ? "kg/lado" : "kg"} <span className="font-normal text-muted-foreground">x {previousBest.reps} reps</span></p></div></CardContent></Card>)}
+        {isCardio && previousBestMinutes && (<Card className="border-primary/20 bg-primary/5"><CardContent className="flex items-center gap-3 p-3"><div className="bg-primary/10 p-2 rounded-full"><TrendingUp className="h-5 w-5 text-primary" /></div><div><p className="text-xs font-medium text-muted-foreground uppercase">Tu Mejor Sesión</p><p className="text-sm font-bold text-foreground">{previousBestMinutes} min</p></div></CardContent></Card>)}
+        {!isCardio && previousBest && (<Card className="border-primary/20 bg-primary/5"><CardContent className="flex items-center gap-3 p-3"><div className="bg-primary/10 p-2 rounded-full"><TrendingUp className="h-5 w-5 text-primary" /></div><div><p className="text-xs font-medium text-muted-foreground uppercase">Tu Récord Global</p><p className="text-sm font-bold text-foreground">{previousBest.weight}{isUnilateral ? "kg/lado" : "kg"} <span className="font-normal text-muted-foreground">x {previousBest.reps} reps</span></p></div></CardContent></Card>)}
         {selectedExercise.videoPlaceholder && (<a href={selectedExercise.videoPlaceholder} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3 rounded-lg bg-secondary border border-border hover:bg-secondary/80 transition-colors"><div className="flex items-center gap-3"><Play className="h-4 w-4 text-red-500 fill-red-500" /><span className="text-sm font-medium">Ver técnica en YouTube</span></div><ChevronRight className="h-4 w-4 text-muted-foreground" /></a>)}
 
         <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
           <div className="flex justify-between items-center mb-3">
              <h3 className="text-sm font-semibold">Registrar Hoy</h3>
              {/* BOTÓN DE DESCANSO RÁPIDO */}
-             <div className="flex gap-1">
-                <Button variant="outline" size="sm" className="h-7 text-xs px-2" onClick={() => startRest(60)}>1:00</Button>
-                <Button variant="outline" size="sm" className="h-7 text-xs px-2" onClick={() => startRest(90)}>1:30</Button>
-                <Button variant="outline" size="sm" className="h-7 text-xs px-2" onClick={() => startRest(120)}>2:00</Button>
-             </div>
+             {!isCardio && (
+               <div className="flex gap-1">
+                  <Button variant="outline" size="sm" className="h-7 text-xs px-2" onClick={() => startRest(60)}>1:00</Button>
+                  <Button variant="outline" size="sm" className="h-7 text-xs px-2" onClick={() => startRest(90)}>1:30</Button>
+                  <Button variant="outline" size="sm" className="h-7 text-xs px-2" onClick={() => startRest(120)}>2:00</Button>
+               </div>
+             )}
           </div>
           
+          {isCardio ? (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground px-1">Duración (minutos)</label>
+              <Input type="number" inputMode="numeric" min={0} className="bg-secondary text-center font-medium" placeholder="0" value={sets[0]?.durationMin || ""} onChange={(e) => handleSetChange(0, "durationMin", Number(e.target.value))} />
+            </div>
+          ) : (<>
           <div className="mb-2 grid grid-cols-[0.5fr_1.5fr_1.5fr_1fr_0.5fr] text-center text-xs font-medium text-muted-foreground px-1">
             <span>#</span>
             <span>{isUnilateral ? "kg/lado" : "Kilos"}</span>
@@ -352,6 +372,7 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
             </div>
           ))}
           <Button variant="outline" size="sm" className="mt-2 w-full border-dashed" onClick={handleAddSet}><Plus className="mr-2 h-4 w-4" /> Agregar Serie</Button>
+          </>)}
           <Button className="w-full mt-4 font-semibold" size="lg" onClick={handleLogWorkout}><Check className="mr-2 h-4 w-4" /> {initialSession ? "Terminar Ejercicio" : "Guardar Entrenamiento"}</Button>
         </div>
 
@@ -376,13 +397,15 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
                       {idx === 0 && <span className="text-primary mr-1">↑ Última vez •</span>}
                       {format(new Date(log.date), "EEEE d 'de' MMMM", { locale: es })}
                     </p>
-                    <span className="text-xs text-muted-foreground">{log.sets.length} series</span>
+                    {!log.sets[0]?.durationMin && <span className="text-xs text-muted-foreground">{log.sets.length} series</span>}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {log.sets.map((s, i) => (
                       <Badge key={i} variant="outline" className={`text-xs font-normal ${idx === 0 ? "bg-primary/10 border-primary/30 text-primary" : "bg-background border-muted-foreground/30"}`}>
+                        {s.durationMin ? (<><strong className="mr-0.5">{s.durationMin}</strong>min</>) : (<>
                         <strong className="mr-0.5">{s.weight}</strong>kg × {s.reps} reps
                         {s.rpe ? <span className="ml-1 opacity-60">RPE {s.rpe}</span> : null}
+                        </>)}
                       </Badge>
                     ))}
                   </div>
@@ -460,10 +483,12 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
                    isCustom: true,
                  }
                  // Siempre usar el ID efectivo y el nombre correcto (customName tiene prioridad)
+                 const cardio = isCardioExercise(baseInfo.muscleGroup, ex.section)
                  const exerciseInfo = {
                    ...baseInfo,
                    id: effectiveId,
                    name: ex.customName || baseInfo.name,
+                   muscleGroup: cardio ? "Cardio" : baseInfo.muscleGroup,
                  }
 
                  return (
@@ -482,7 +507,7 @@ export function WorkoutTracker({ workoutLogs, runningLogs = [], onLogAdded, init
                            </div>
                            <div>
                               <p className={`font-semibold ${isDone ? "text-primary" : "text-foreground"}`}>{exerciseInfo.name}</p>
-                              <p className="text-xs text-muted-foreground">{ex.sets} series x {ex.reps} reps</p>
+                              <p className="text-xs text-muted-foreground">{cardio && getCardioMinutes(ex) ? `${getCardioMinutes(ex)} min` : `${ex.sets} series x ${ex.reps} reps`}</p>
                            </div>
                         </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />

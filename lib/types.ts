@@ -8,6 +8,7 @@ export interface WorkoutSet {
   weight: number
   reps: number
   rpe?: number
+  durationMin?: number // Solo cardio: minutos realizados (weight/reps quedan en 0)
 }
 
 export interface WorkoutLog {
@@ -77,6 +78,7 @@ export interface RoutineExercise {
   rpe?: number
   weight?: number      // Peso sugerido en kg (opcional)
   customName?: string  // Nombre custom para ejercicios no en el catálogo
+  durationMin?: number // Solo cardio: minutos objetivo (sets = 1 y reps = "N min" se mantienen en sync)
   section?: RoutineSection // Bloque del día: activación / principal / complementario / accesorio / cardio
 }
 

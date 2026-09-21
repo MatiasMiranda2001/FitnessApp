@@ -155,15 +155,19 @@ export function WorkoutHistory({ logs }: WorkoutHistoryProps) {
                               <div className="flex flex-col gap-1">
                                 {log.sets.map((s, i) => (
                                   <span key={i} className="text-xs font-mono">
-                                    <span className="font-bold text-foreground">{s.weight}kg</span>
-                                    <span className="text-muted-foreground mx-0.5">x</span>
-                                    <span>{s.reps}</span>
+                                    {s.durationMin ? (
+                                      <span className="font-bold text-foreground">{s.durationMin} min</span>
+                                    ) : (<>
+                                      <span className="font-bold text-foreground">{s.weight}kg</span>
+                                      <span className="text-muted-foreground mx-0.5">x</span>
+                                      <span>{s.reps}</span>
+                                    </>)}
                                   </span>
                                 ))}
                               </div>
                             </td>
                             <td className="px-3 py-3 text-right font-mono text-primary font-bold text-xs align-top pt-3">
-                              {estimate1RM(bestSet.weight, bestSet.reps)}
+                              {bestSet.durationMin ? "—" : estimate1RM(bestSet.weight, bestSet.reps)}
                             </td>
                           </tr>
                         )

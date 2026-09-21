@@ -277,3 +277,15 @@ export const muscleGroupLabels: Record<string, string> = {
   Abdomen: "Abdomen",
   Cardio: "Cardio",
 }
+
+/** Un ejercicio se mide en minutos (no series/reps/peso) si es del grupo Cardio o va en el bloque cardio. */
+export function isCardioExercise(muscleGroup?: string, section?: string): boolean {
+  return muscleGroup === "Cardio" || section === "cardio"
+}
+
+/** Minutos objetivo de un ejercicio de cardio: `durationMin`, o el número de un `reps` tipo "20 min". */
+export function getCardioMinutes(ex: { durationMin?: number; reps?: string }): number | undefined {
+  if (ex.durationMin && ex.durationMin > 0) return ex.durationMin
+  const m = /^\s*(\d+)\s*min/i.exec(ex.reps ?? "")
+  return m ? Number(m[1]) : undefined
+}

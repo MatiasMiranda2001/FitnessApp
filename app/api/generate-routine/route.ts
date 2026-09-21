@@ -4,7 +4,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextResponse } from "next/server"
 import { getAuthedUserId } from "@/lib/limits"
-import { defaultExercises } from "@/lib/exercises"
+import { defaultExercises, isCardioExercise, getCardioMinutes } from "@/lib/exercises"
 import { SECTION_ORDER, normalizeSection } from "@/lib/routine-sections"
 import type { RoutineSection } from "@/lib/types"
 
@@ -175,7 +175,8 @@ DEVOLVÉ EXCLUSIVAMENTE UN JSON VÁLIDO con esta estructura exacta (sin markdown
       "dayNumber": 1,
       "label": "Día 1 — [Tipo: Push / Pull / Legs / Upper / Lower / Full Body]",
       "exercises": [
-        { "exerciseId": "id-exacto-del-catalogo", "sets": 4, "reps": "8-12", "rpe": 7, "section": "principal" }
+        { "exerciseId": "id-exacto-del-catalogo", "sets": 4, "reps": "8-12", "rpe": 7, "section": "principal" },
+        { "exerciseId": "id-de-un-ejercicio-de-cardio", "sets": 1, "reps": "20 min", "rpe": 6, "section": "cardio" }
       ]
     }
   ]
@@ -245,14 +246,30 @@ IMPORTANTE:
       .map((day, idx) => {
         const exercises = (day.exercises ?? [])
           .filter(ex => ex.exerciseId && validIds.has(ex.exerciseId))
-          .map(ex => ({
-            exerciseId: ex.exerciseId!,
-            sets: Math.max(1, Math.min(10, Number(ex.sets) || 3)),
-            reps: typeof ex.reps === "string" && ex.reps.trim() ? ex.reps.trim() : "8-12",
-            rpe: ex.rpe !== undefined ? Math.max(1, Math.min(10, Number(ex.rpe))) : 7,
-            section: normalizeSection(ex.section),
-            ...(ex.weight !== undefined ? { weight: Number(ex.weight) } : {}),
-          }))
+          .map(ex => {
+            const section = normalizeSection(ex.section)
+            const muscleGroup = finalCatalog.find(e => e.id === ex.exerciseId)?.muscleGroup
+            // Cardio se planifica en minutos, no en series/reps/peso.
+            if (isCardioExercise(muscleGroup, section)) {
+              const durationMin = getCardioMinutes({ reps: `${ex.reps ?? ""}`.replace(/^(\d+)\s*$/, "$1 min") }) ?? 20
+              return {
+                exerciseId: ex.exerciseId!,
+                sets: 1,
+                reps: `${durationMin} min`,
+                durationMin,
+                rpe: ex.rpe !== undefined ? Math.max(1, Math.min(10, Number(ex.rpe))) : 7,
+                section: "cardio" as RoutineSection,
+              }
+            }
+            return {
+              exerciseId: ex.exerciseId!,
+              sets: Math.max(1, Math.min(10, Number(ex.sets) || 3)),
+              reps: typeof ex.reps === "string" && ex.reps.trim() ? ex.reps.trim() : "8-12",
+              rpe: ex.rpe !== undefined ? Math.max(1, Math.min(10, Number(ex.rpe))) : 7,
+              section,
+              ...(ex.weight !== undefined ? { weight: Number(ex.weight) } : {}),
+            }
+          })
           // Reordenamos por bloque por si Gemini no respetó el orden pedido.
           .sort((a, b) => sectionRank(a.section) - sectionRank(b.section))
 
